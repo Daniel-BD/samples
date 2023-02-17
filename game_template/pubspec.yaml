@@ -28,6 +28,13 @@ dependencies:
   games_services: ^3.0.0  # Achievements and leaderboards
   google_mobile_ads: ^2.0.1  # Ads
   in_app_purchase: ^3.0.1  # In-app purchases
+  google_fonts: ^4.0.1
+  auto_size_text: ^3.0.0
+  carousel_slider: ^4.2.1
+  tuple: ^2.0.1
+  cloud_firestore: ^4.3.1
+  equatable: ^2.0.5
+  state_notifier: ^0.7.2+1
 
 dev_dependencies:
   flutter_test:

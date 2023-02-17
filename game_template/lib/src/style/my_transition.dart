@@ -6,6 +6,28 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart';
 
+CustomTransitionPage<T> buildFadeInTransition<T>({
+  required Widget child,
+  String? name,
+  Object? arguments,
+  String? restorationId,
+  LocalKey? key,
+}) {
+  return CustomTransitionPage<T>(
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: animation,
+        child: child,
+      );
+    },
+    key: key,
+    name: name,
+    arguments: arguments,
+    restorationId: restorationId,
+  );
+}
+
 CustomTransitionPage<T> buildMyTransition<T>({
   required Widget child,
   required Color color,

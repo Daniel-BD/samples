@@ -1,7 +1,3 @@
-// Copyright 2022, the Flutter project authors. Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
 // Uncomment the following lines when enabling Firebase Crashlytics
 // import 'dart:io';
 // import 'package:firebase_core/firebase_core.dart';
@@ -11,6 +7,10 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:game_template/src/about/about_screen.dart';
+import 'package:game_template/src/drawing_screen/drawing_screen.dart';
+import 'package:game_template/src/main_menu/main_menu_screen.dart';
+import 'package:game_template/src/theme/colors.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
@@ -24,7 +24,7 @@ import 'src/games_services/score.dart';
 import 'src/in_app_purchase/in_app_purchase.dart';
 import 'src/level_selection/level_selection_screen.dart';
 import 'src/level_selection/levels.dart';
-import 'src/main_menu/main_menu_screen.dart';
+import 'src/main_menu/main_menu_screen_template.dart';
 import 'src/play_session/play_session_screen.dart';
 import 'src/player_progress/persistence/local_storage_player_progress_persistence.dart';
 import 'src/player_progress/persistence/player_progress_persistence.dart';
@@ -36,6 +36,7 @@ import 'src/settings/settings_screen.dart';
 import 'src/style/my_transition.dart';
 import 'src/style/palette.dart';
 import 'src/style/snack_bar.dart';
+import 'src/ui_components/playground_screen.dart';
 import 'src/win_game/win_game_screen.dart';
 
 Future<void> main() async {
@@ -132,6 +133,13 @@ class MyApp extends StatelessWidget {
               const MainMenuScreen(key: Key('main menu')),
           routes: [
             GoRoute(
+              path: 'drawing_playground',
+              pageBuilder: (context, state) => buildMyTransition<void>(
+                child: const DrawingScreen(key: Key('drawing_playground')),
+                color: context.watch<Palette>().backgroundLevelSelection,
+              ),
+            ),
+            GoRoute(
                 path: 'play',
                 pageBuilder: (context, state) => buildMyTransition<void>(
                       child: const LevelSelectionScreen(
@@ -175,6 +183,43 @@ class MyApp extends StatelessWidget {
               builder: (context, state) =>
                   const SettingsScreen(key: Key('settings')),
             ),
+            GoRoute(
+              path: 'about',
+              pageBuilder: (context, state) {
+                return buildFadeInTransition(
+                  child: const AboutScreen(key: Key('about')),
+                );
+              },
+              routes: [
+                GoRoute(
+                  path: 'privacy_policy',
+                  pageBuilder: (context, state) {
+                    return buildFadeInTransition(
+                      child: const PolicyAndLicenceScreen(
+                        key: Key('privacy_policy'),
+                        aboutInfoScreen: AboutInfoScreenType.privacyPolicy,
+                      ),
+                    );
+                  },
+                ),
+                GoRoute(
+                  path: 'licence_information',
+                  pageBuilder: (context, state) {
+                    return buildFadeInTransition(
+                      child: const PolicyAndLicenceScreen(
+                        key: Key('licence_information'),
+                        aboutInfoScreen: AboutInfoScreenType.licenceInformation,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            GoRoute(
+              path: 'playground',
+              builder: (context, state) =>
+                  const PlaygroundScreen(key: Key('playground')),
+            )
           ]),
     ],
   );
@@ -241,21 +286,12 @@ class MyApp extends StatelessWidget {
           ),
         ],
         child: Builder(builder: (context) {
-          final palette = context.watch<Palette>();
+          // final palette = context.watch<Palette>();
 
           return MaterialApp.router(
             title: 'Flutter Demo',
-            theme: ThemeData.from(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: palette.darkPen,
-                background: palette.backgroundMain,
-              ),
-              textTheme: TextTheme(
-                bodyMedium: TextStyle(
-                  color: palette.ink,
-                ),
-              ),
-              useMaterial3: true,
+            theme: ThemeData(
+              scaffoldBackgroundColor: backgroundSky,
             ),
             routeInformationProvider: _router.routeInformationProvider,
             routeInformationParser: _router.routeInformationParser,
