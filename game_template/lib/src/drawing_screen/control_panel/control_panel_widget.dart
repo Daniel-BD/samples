@@ -71,7 +71,7 @@ class _ControlPanelState extends State<ControlPanel>
   }
 
   Widget _panel(BuildContext context) {
-    final drawMode = context.read<DrawingState>().currentBrushState.drawMode;
+    final drawMode = context.read<BrushState>().currentBrush.drawMode;
     final panelState = context.read<ControlPanelController>().panelState;
 
     return Container(
@@ -144,7 +144,7 @@ class _ControlPanelState extends State<ControlPanel>
                       onPressed: () {
                         if (drawMode != DrawMode.brush) {
                           context
-                              .read<DrawingState>()
+                              .read<BrushState>()
                               .setDrawMode(DrawMode.brush);
 
                           context.read<ControlPanelController>().panelState =
@@ -171,7 +171,7 @@ class _ControlPanelState extends State<ControlPanel>
                   : 'assets/images/Active=false, Type=eraser.png',
               onPressed: () {
                 if (drawMode != DrawMode.eraser) {
-                  context.read<DrawingState>().setDrawMode(DrawMode.eraser);
+                  context.read<BrushState>().setDrawMode(DrawMode.eraser);
                   context.read<ControlPanelController>().panelState =
                       ControlPanelState.none;
                 } else {
@@ -193,8 +193,7 @@ class _ControlPanelState extends State<ControlPanel>
 
   @override
   Widget build(BuildContext context) {
-    final currentBrushState = context
-        .select<DrawingState, CurrentBrushState>((c) => c.currentBrushState);
+    final currentBrushState = context.watch<BrushState>().currentBrush;
     final panelState = context
         .select<ControlPanelController, ControlPanelState>((c) => c.panelState);
 
@@ -353,13 +352,13 @@ class _ControlPanelState extends State<ControlPanel>
                         width: sliderWidth,
                         child: Slider.adaptive(
                           value: context
-                              .read<DrawingState>()
-                              .currentBrushState
+                              .read<BrushState>()
+                              .currentBrush
                               .currentEraserSize,
                           onChanged: (newValue) => context
-                              .read<DrawingState>()
+                              .read<BrushState>()
                               .setEraserSize(newValue),
-                          min: 8.0,
+                          min: 8.0, //TODO: Replace with const variables?
                           max: 80.0,
                         ),
                       ),
@@ -382,11 +381,11 @@ class _ControlPanelState extends State<ControlPanel>
                         width: sliderWidth,
                         child: Slider.adaptive(
                           value: context
-                              .read<DrawingState>()
-                              .currentBrushState
+                              .read<BrushState>()
+                              .currentBrush
                               .currentEraserOpacity,
                           onChanged: (newValue) => context
-                              .read<DrawingState>()
+                              .read<BrushState>()
                               .setEraserOpacity(newValue),
                           min: 0.0,
                           max: 1.0,
@@ -407,18 +406,12 @@ class _ControlPanelState extends State<ControlPanel>
           width: 80.0,
           child: Center(
             child: Container(
-              height: context
-                  .read<DrawingState>()
-                  .currentBrushState
-                  .currentEraserSize,
-              width: context
-                  .read<DrawingState>()
-                  .currentBrushState
-                  .currentEraserSize,
+              height: context.read<BrushState>().currentBrush.currentEraserSize,
+              width: context.read<BrushState>().currentBrush.currentEraserSize,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(context
-                    .read<DrawingState>()
-                    .currentBrushState
+                    .read<BrushState>()
+                    .currentBrush
                     .currentEraserOpacity),
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.black, width: 4.0),

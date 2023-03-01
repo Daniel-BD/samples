@@ -1,42 +1,51 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:game_template/src/custom_painting/brushes/brush_extensions.dart';
 
 import '../custom_painting/brushes/brushes.dart';
 
+@immutable
 class BrushSettingsModel extends Equatable {
   // ignore: prefer_const_constructors_in_immutables
   BrushSettingsModel({
-    required this.allBrushes,
+    required this.allBrushesMap,
     required this.favorites,
   });
 
   BrushSettingsModel.defaultSettings() {
-    List<BrushSettings> defaultBrushes = [];
+    Map<BrushStyle, BrushSettings> defaultBrushes = {};
     for (final brushStyle in availableBrushes) {
-      defaultBrushes.add(brushStyle.defaultSettings);
+      defaultBrushes[brushStyle] = brushStyle.defaultSettings;
     }
-    allBrushes = defaultBrushes;
+    allBrushesMap = defaultBrushes;
     favorites = [];
   }
 
-  late final List<BrushSettings> allBrushes;
+  late final Map<BrushStyle, BrushSettings> allBrushesMap;
   late final List<BrushSettings> favorites;
   static const maxFavoriteBrushes = 20;
 
   BrushSettingsModel.fromJson(Map<String, dynamic> json) {
     List<BrushSettings> allBrushesTemp = [];
+    Map<BrushStyle, BrushSettings> allBrushesTempMap = {};
+    for (final brushStyle in availableBrushes) {
+      allBrushesTempMap[brushStyle] = brushStyle.defaultSettings;
+    }
+
     final allBrushesJSON = json["allBrushes"] as Iterable;
 
     for (final brushJSON in allBrushesJSON) {
       for (final brushStyle in availableBrushes) {
         if (brushStyle.name == brushJSON["style"]) {
-          allBrushesTemp
-              .add(brushStyle.brushFromJSON(brushJSON as Map<String, dynamic>));
+          allBrushesTemp.add(
+            brushStyle.brushFromJSON(brushJSON as Map<String, dynamic>),
+          );
+          allBrushesTempMap[brushStyle] = brushStyle.brushFromJSON(brushJSON);
         }
       }
     }
 
-    allBrushes = allBrushesTemp;
+    allBrushesMap = allBrushesTempMap;
 
     List<BrushSettings> favoriteBrushesTemp = [];
     final favoriteBrushesJSON = json["favorites"] as Iterable;
@@ -57,7 +66,7 @@ class BrushSettingsModel extends Equatable {
     List<Map<String, dynamic>> allBrushesJSON = [];
     List<Map<String, dynamic>> favoriteBrushesJSON = [];
 
-    for (final brush in allBrushes) {
+    for (final brush in allBrushesMap.values) {
       allBrushesJSON.add(brush.toJson());
     }
 
@@ -72,5 +81,5 @@ class BrushSettingsModel extends Equatable {
   }
 
   @override
-  List<Object?> get props => [allBrushes, favorites];
+  List<Object?> get props => [allBrushesMap, favorites];
 }

@@ -15,7 +15,11 @@ const List<BrushStyle> availableBrushes = [
   BrushStyle.angledThick,
   BrushStyle.triangles,
   BrushStyle.beads,
+  BrushStyle.starryNight,
+  BrushStyle.splatterDots,
+  BrushStyle.rainbow,
   BrushStyle.eraser
+  //Todo: gör en dashed? https://medium.com/flutter-community/playing-with-paths-in-flutter-97198ba046c8
 ];
 
 // DON'T CHANGE THE NAMES OF THESE! DOING SO WILL BREAK JSON SERIALIZATION.
@@ -33,6 +37,8 @@ enum BrushStyle {
   rainbow,
   eraser,
 }
+
+class BrushStroke {}
 
 abstract class BrushSettings extends Equatable {
   const BrushSettings(this.brushStyle);
@@ -1516,14 +1522,14 @@ class TriangleBrushLine extends BrushLine {
 
   late final fillPaint = Paint()
     ..strokeWidth = settings.strokeWidth
-    ..strokeJoin = StrokeJoin.round
+    ..strokeJoin = StrokeJoin.bevel
     ..style = PaintingStyle.fill
     ..color = settings.color
     ..strokeCap = StrokeCap.round;
 
   late final strokePaint = Paint()
     ..strokeWidth = settings.strokeWidth
-    ..strokeJoin = StrokeJoin.round
+    ..strokeJoin = StrokeJoin.bevel
     ..style = PaintingStyle.stroke
     ..color = settings.secondColor ?? settings.color
     ..strokeCap = StrokeCap.round;

@@ -85,9 +85,17 @@ extension BrushExtensions on BrushStyle {
           width: defaultWidth,
         );
       case BrushStyle.starryNight:
+        return StarryNightBrushSettings(
+          color: brushColors[12],
+          grainLength: 9,
+          grainThickness: 4,
+          strokeWidth: 2,
+        );
         assert(false, 'not yet available!');
         break;
       case BrushStyle.splatterDots:
+        return SplatterDotsBrushSettings(
+            color: brushColors[10], dotSize: 3, strokeWidth: 12);
         assert(false, 'not yet available!');
         break;
       case BrushStyle.triangles:
@@ -99,6 +107,7 @@ extension BrushExtensions on BrushStyle {
           secondColor: brushColors[9],
         );
       case BrushStyle.rainbow:
+        return RainbowBrushSettings(width: 16);
         assert(false, 'not yet available!');
         break;
       case BrushStyle.eraser:

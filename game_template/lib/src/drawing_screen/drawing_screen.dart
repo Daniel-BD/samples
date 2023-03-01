@@ -40,6 +40,10 @@ class _DrawingScreenState extends State<DrawingScreen> {
           create: (_) => DrawingState(),
           lazy: false,
         ),
+        ChangeNotifierProvider(
+          create: (_) => BrushState(),
+          lazy: false,
+        ),
         ChangeNotifierProvider(create: (_) => ControlPanelController()),
         ChangeNotifierProvider(
           create: (_) => BrushSettingsController(),
@@ -112,8 +116,9 @@ class _DrawingScreenState extends State<DrawingScreen> {
                       ),
                     ),
                     Builder(builder: (context) {
-                      final drawingState = context.watch<DrawingState>();
-                      return drawingState.initialized
+                      final initialized = context
+                          .select<DrawingState, bool>((s) => s.initialized);
+                      return initialized
                           ? LayoutBuilder(
                               builder: (context, constraints) {
                                 final panelHeight =
@@ -165,6 +170,7 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DrawingState>().setOriginalCanvasSize(widget.availableSize);
+      context.read<BrushState>().setOriginalCanvasSize(widget.availableSize);
     });
     _originalCanvasSize =
         ExperimentalDrawing.canvasSizeCalculator(widget.availableSize);
@@ -180,64 +186,62 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
         ExperimentalDrawing.canvasSizeCalculator(widget.availableSize);
     final customPaintScale = _canvasSize.width / _originalCanvasSize.width;
 
-    return Container(
-      color: monsterCanvasColor,
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onPanStart: (details) {
-          context.read<DrawingState>().startNewLine(
-                startPoint: scaleCoordinate(details.localPosition,
-                    _originalCanvasSize.width / _canvasSize.width),
-              );
-        },
-        onPanUpdate: (details) {
-          context.read<DrawingState>().addPoint(
-                scaleCoordinate(details.localPosition,
-                    _originalCanvasSize.width / _canvasSize.width),
-              );
-        },
-        onPanEnd: (details) {
-          context.read<DrawingState>().endCurrentLine();
-        },
-        child: Stack(
-          children: <Widget>[
-            if (widget.drawingToContinueOn != null)
-              Positioned(
-                top: -(_myDrawing.originalHeight * (5 / 6)),
-                child: SizedBox(
-                  width: widget.availableSize.width,
-                  child: ClipRect(
-                    child: CustomPaint(
-                      size: _canvasSize,
-                      painter: MyPainter(
-                        widget.drawingToContinueOn!.getScaledPaths(
-                            outputHeight: _myDrawing.originalHeight),
-                        widget.drawingToContinueOn!.getScaledPaints(
-                            outputHeight: _myDrawing.originalHeight),
-                      ),
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onPanStart: (details) {
+        context.read<DrawingState>().startNewLine(
+              startPoint: scaleCoordinate(details.localPosition,
+                  _originalCanvasSize.width / _canvasSize.width),
+              brushSettings:
+                  context.read<BrushState>().currentBrush.currentBrushOrEraser,
+            );
+      },
+      onPanUpdate: (details) {
+        context.read<DrawingState>().addPoint(
+              scaleCoordinate(details.localPosition,
+                  _originalCanvasSize.width / _canvasSize.width),
+            );
+      },
+      onPanEnd: (details) {
+        context.read<DrawingState>().endCurrentLine();
+      },
+      child: Stack(
+        children: <Widget>[
+          if (widget.drawingToContinueOn != null)
+            Positioned(
+              top: -(_myDrawing.originalHeight * (5 / 6)),
+              child: SizedBox(
+                width: widget.availableSize.width,
+                child: ClipRect(
+                  child: CustomPaint(
+                    size: _canvasSize,
+                    painter: MyPainter(
+                      widget.drawingToContinueOn!.getScaledPaths(
+                          outputHeight: _myDrawing.originalHeight),
+                      widget.drawingToContinueOn!.getScaledPaints(
+                          outputHeight: _myDrawing.originalHeight),
                     ),
                   ),
                 ),
               ),
-            ClipRect(
-              child: Builder(builder: (context) {
-                final drawingState = context.watch<DrawingState>();
-                // final brushLines =
-                //     context.select<DrawingState, List<BrushLine>>(
-                //         (value) => value.lines);
-                return CustomPaint(
-                  size: _canvasSize,
-                  isComplex: true,
-                  painter: BrushPainter(drawingState.lines, customPaintScale),
-                );
-              }),
             ),
-            const Align(
-              alignment: Alignment.bottomCenter,
-              child: DashedLine(),
+          ClipRect(
+            child: RepaintBoundary(
+              child: CustomPaint(
+                size: _canvasSize,
+                isComplex: true,
+                painter: BrushPainter(
+                  drawingState: context.read<DrawingState>(),
+                  scale: customPaintScale,
+                ),
+              ),
             ),
-          ],
-        ),
+          ),
+          const Align(
+            alignment: Alignment.bottomCenter,
+            child: DashedLine(),
+          ),
+        ],
       ),
     );
   }

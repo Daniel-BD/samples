@@ -30,14 +30,11 @@ class BrushPreview extends StatefulWidget {
 }
 
 class _BrushPreviewState extends State<BrushPreview> {
-  // final _brushController = Get.find<DrawingState>().currentBrushState;
-  // final _controlPanelController = Get.find<ControlPanelController>();
   bool showSettings = false;
 
   @override
   Widget build(BuildContext context) {
-    final currentBrush = context
-        .select<DrawingState, CurrentBrushState>((s) => s.currentBrushState);
+    final currentBrush = context.watch<BrushState>().currentBrush;
     final controlPanelSettings = context.watch<ControlPanelController>();
 
     var brushSetting = widget.brushSettings;
@@ -77,7 +74,7 @@ class _BrushPreviewState extends State<BrushPreview> {
               padding: const EdgeInsets.all(0),
               onPressed: () {
                 context
-                    .read<DrawingState>()
+                    .read<BrushState>()
                     .setCurrentBrush(widget.brushSettings);
                 controlPanelSettings.panelState = ControlPanelState.none;
               },
@@ -109,9 +106,9 @@ class _BrushPreviewState extends State<BrushPreview> {
                           vertical: constraints.biggest.height * 0.2,
                         ),
                         child: CustomPaint(
-                          painter: BrushPainter(
-                            [brushLine],
-                            1.0,
+                          painter: BrushPreviewPainter(
+                            brushLines: [brushLine],
+                            scale: 1.0,
                           ),
                         ),
                       ),
@@ -171,7 +168,7 @@ class _BrushPreviewState extends State<BrushPreview> {
                         isFavorite: widget.isFavorite,
                         favoriteIndex: widget.favoriteIndex,
                       );
-                  context.read<DrawingState>().setCurrentBrush(newSettings);
+                  context.read<BrushState>().setCurrentBrush(newSettings);
                 },
               ),
             ),

@@ -10,10 +10,7 @@ enum DrawMode { brush, eraser }
 
 class DrawingState extends ChangeNotifier {
   final _drawing = ExperimentalDrawing();
-  CurrentBrushState get currentBrushState => _currentBrushState;
-  late CurrentBrushState _currentBrushState;
   bool get initialized => _drawing.hasSetOriginalCanvasSize;
-
   List<BrushLine> get lines => _drawing.lines;
 
   void setOriginalCanvasSize(Size sizeAvailable) {
@@ -21,41 +18,17 @@ class DrawingState extends ChangeNotifier {
       _drawing.setOriginalCanvasSize(sizeAvailable);
       notifyListeners();
     }
-    _currentBrushState =
-        CurrentBrushState(scaleFactor: _drawing.brushScaleFactor);
     if (!_drawing.hasSetOriginalCanvasSize) {
       //TODO: Remove this?
       SchedulerBinding.instance.addPostFrameCallback((_) => notifyListeners());
     }
   }
 
-  void setDrawMode(DrawMode drawMode) {
-    _currentBrushState = _currentBrushState.copyWith(drawMode: drawMode);
-    notifyListeners();
-  }
-
-  void setCurrentBrush(BrushSettings brush) {
-    _currentBrushState = _currentBrushState.copyWith(currentBrush: brush);
-    notifyListeners();
-  }
-
-  void setEraserOpacity(double opacity) {
-    assert(opacity <= 1.0 && opacity >= 0.0, 'Opacity is out of range');
-    _currentBrushState =
-        _currentBrushState.copyWith(currentEraserOpacity: opacity);
-    notifyListeners();
-  }
-
-  void setEraserSize(double eraserSize) {
-    _currentBrushState =
-        _currentBrushState.copyWith(currentEraserSize: eraserSize);
-    notifyListeners();
-  }
-
-  void startNewLine({required Offset startPoint}) {
-    _drawing.startNewLine(
-        brushSettings: _currentBrushState.currentBrushOrEraser,
-        startPoint: startPoint);
+  void startNewLine({
+    required Offset startPoint,
+    required BrushSettings brushSettings,
+  }) {
+    _drawing.startNewLine(brushSettings: brushSettings, startPoint: startPoint);
     notifyListeners();
   }
 
@@ -85,9 +58,42 @@ class DrawingState extends ChangeNotifier {
   }
 }
 
+class BrushState extends ChangeNotifier {
+  late CurrentBrush _currentBrushState;
+  CurrentBrush get currentBrush => _currentBrushState;
+
+  void setOriginalCanvasSize(Size size) {
+    _currentBrushState = CurrentBrush(scaleFactor: size.height / 375);
+    notifyListeners();
+  }
+
+  void setDrawMode(DrawMode drawMode) {
+    _currentBrushState = _currentBrushState.copyWith(drawMode: drawMode);
+    notifyListeners();
+  }
+
+  void setCurrentBrush(BrushSettings brush) {
+    _currentBrushState = _currentBrushState.copyWith(currentBrush: brush);
+    notifyListeners();
+  }
+
+  void setEraserOpacity(double opacity) {
+    assert(opacity <= 1.0 && opacity >= 0.0, 'Opacity is out of range');
+    _currentBrushState =
+        _currentBrushState.copyWith(currentEraserOpacity: opacity);
+    notifyListeners();
+  }
+
+  void setEraserSize(double eraserSize) {
+    _currentBrushState =
+        _currentBrushState.copyWith(currentEraserSize: eraserSize);
+    notifyListeners();
+  }
+}
+
 @immutable
-class CurrentBrushState {
-  CurrentBrushState({
+class CurrentBrush {
+  CurrentBrush({
     required this.scaleFactor,
     this.drawMode = DrawMode.brush,
     this.currentEraserOpacity = 1.0,
@@ -95,31 +101,30 @@ class CurrentBrushState {
     double? currentEraserSize,
     EraserBrushSettings? eraser,
   }) {
-    this.currentBrush = currentBrush ??
+    _currentBrushSettings = currentBrush ??
         BrushStyle.singleStroke.defaultSettings.withScaleFactor(scaleFactor);
 
     this.currentEraserSize = currentEraserSize ?? (scaleFactor * 16.0);
 
-    this.eraser = eraser ??
-        EraserBrushSettings(
-          width: this.currentEraserSize,
-          opacity: currentEraserOpacity,
-        );
+    this.eraser = EraserBrushSettings(
+      width: this.currentEraserSize,
+      opacity: currentEraserOpacity,
+    ); //eraser ??
   }
 
   final double scaleFactor;
   final DrawMode drawMode;
-  late final BrushSettings currentBrush;
+  late final BrushSettings _currentBrushSettings;
 
   late final double currentEraserSize;
   final double currentEraserOpacity;
   late final EraserBrushSettings eraser;
 
   BrushSettings get currentBrushOrEraser {
-    return drawMode == DrawMode.brush ? currentBrush : eraser;
+    return drawMode == DrawMode.brush ? _currentBrushSettings : eraser;
   }
 
-  CurrentBrushState copyWith({
+  CurrentBrush copyWith({
     double? scaleFactor,
     DrawMode? drawMode,
     double? currentEraserOpacity,
@@ -127,26 +132,13 @@ class CurrentBrushState {
     double? currentEraserSize,
     EraserBrushSettings? eraser,
   }) {
-    return CurrentBrushState(
+    return CurrentBrush(
       scaleFactor: scaleFactor ?? this.scaleFactor,
       drawMode: drawMode ?? this.drawMode,
       currentEraserOpacity: currentEraserOpacity ?? this.currentEraserOpacity,
-      currentBrush: currentBrush ?? this.currentBrush,
+      currentBrush: currentBrush ?? _currentBrushSettings,
       currentEraserSize: currentEraserSize ?? this.currentEraserSize,
       eraser: eraser ?? this.eraser,
     );
   }
 }
-
-// class CurrentBrushNotifier extends StateNotifier<CurrentBrushState> {
-//   CurrentBrushNotifier(super.state);
-//
-//   void setCurrentBrush(BrushSettings currentBrush) {
-//     state = state.copyWith(currentBrush: currentBrush);
-//   }
-//
-//   void setEraserOpacity(double opacity) {
-//     assert(opacity <= 1.0 && opacity >= 0.0, 'Opacity is out of range');
-//     state = state.copyWith(currentEraserOpacity: opacity);
-//   }
-// }

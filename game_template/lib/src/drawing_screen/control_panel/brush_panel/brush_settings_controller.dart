@@ -12,7 +12,8 @@ class BrushSettingsController extends ChangeNotifier {
 
   BrushSettingsModel _brushSettings = BrushSettingsModel.defaultSettings();
 
-  List<BrushSettings> get allBrushes => _brushSettings.allBrushes;
+  List<BrushSettings> get allBrushes =>
+      _brushSettings.allBrushesMap.values.toList();
   List<BrushSettings> get favorites => _brushSettings.favorites;
 
   /// Returns true if successful
@@ -20,8 +21,10 @@ class BrushSettingsController extends ChangeNotifier {
     if (favorites.length < BrushSettingsModel.maxFavoriteBrushes) {
       var favCopy = favorites;
       favCopy.add(newFavorite);
-      _brushSettings =
-          BrushSettingsModel(allBrushes: allBrushes, favorites: favCopy);
+      _brushSettings = BrushSettingsModel(
+        allBrushesMap: _brushSettings.allBrushesMap,
+        favorites: favCopy,
+      );
       notifyListeners();
       _saveDataToDisk();
       return true;
@@ -36,8 +39,10 @@ class BrushSettingsController extends ChangeNotifier {
     } else {
       var favCopy = favorites;
       favCopy.removeAt(favoriteIndex);
-      _brushSettings =
-          BrushSettingsModel(allBrushes: allBrushes, favorites: favCopy);
+      _brushSettings = BrushSettingsModel(
+        allBrushesMap: _brushSettings.allBrushesMap,
+        favorites: favCopy,
+      );
       notifyListeners();
       _saveDataToDisk();
       return true;
@@ -61,12 +66,13 @@ class BrushSettingsController extends ChangeNotifier {
     }
 
     if (!isFavorite) {
-      var allCopy = allBrushes;
-      final index = allCopy.indexWhere(
-          (element) => element.brushStyle == newSettings.brushStyle);
-      allCopy[index] = newSettings;
-      _brushSettings =
-          BrushSettingsModel(allBrushes: allCopy, favorites: favorites);
+      var updatedAllBrushes = _brushSettings.allBrushesMap;
+      if (!updatedAllBrushes.containsKey(newSettings.brushStyle)) return;
+      updatedAllBrushes[newSettings.brushStyle] = newSettings;
+      _brushSettings = BrushSettingsModel(
+        allBrushesMap: updatedAllBrushes,
+        favorites: favorites,
+      );
       notifyListeners();
       _saveDataToDisk();
     } else {
@@ -74,10 +80,12 @@ class BrushSettingsController extends ChangeNotifier {
           favorites.length - 1 <= favoriteIndex &&
           favoriteIndex >= 0 &&
           favorites[favoriteIndex].brushStyle == newSettings.brushStyle) {
-        var favoritesCopy = favorites;
-        favoritesCopy[favoriteIndex] = newSettings;
+        var updatedFavorites = favorites;
+        updatedFavorites[favoriteIndex] = newSettings;
         _brushSettings = BrushSettingsModel(
-            allBrushes: allBrushes, favorites: favoritesCopy);
+          allBrushesMap: _brushSettings.allBrushesMap,
+          favorites: updatedFavorites,
+        );
         notifyListeners();
         _saveDataToDisk();
       }
