@@ -12,7 +12,8 @@ const Color controlPanelButtonColor = Color(0xFF2D324D);
 const Color panelDarkColor = Color(0xFF3D3D3D);
 const Color panelOffWhiteColor = Color(0xFFFAFAFA);
 const Color panelActiveButtonColor = Color(0xFF3B6CB7);
-const Color brushButtonTextColor = Color(0xFF0F52B3); //Color(0xFF307BF6);
+const Color brushButtonTextColor =
+    Color(0xFF307BF6); //Color(0xFF307BF6); //0xFF0F52B3
 const Color brushActiveColor = Color(0xFF8A95B1);
 const Color brushInactiveColor = Color(0xFFB6C5D9);
 const Color checkersPatternDarkColor = Color(0xFFE9E5DD);

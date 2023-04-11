@@ -121,6 +121,10 @@ class SettingsPanelColorPicker extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isRainbowColored ? null : oldColor,
+                  border: Border.all(
+                    width: 2.0,
+                    color: Colors.black.withOpacity(0.7),
+                  ),
                   gradient: isRainbowColored
                       ? SweepGradient(
                           colors: [
@@ -195,123 +199,96 @@ class _ColorPickerState extends State<ColorPicker> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 4.0),
         child: PopUpPanelDecoration(
-          child: Padding(
-            padding: EdgeInsets.zero,
-            // const EdgeInsets.only(top: 2, left: 2, right: 2, bottom: 0),
-            child: Material(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.zero,
-                    // padding: const EdgeInsets.only(
-                    //   top: AppConstants.mediumVerticalSpacing,
-                    // ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(
-                              //bottom: AppConstants.mediumVerticalSpacing,
-                              ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Opacity',
-                                style: GameTextStyles.boldTextStyle(
-                                    media: media, isLandscape: true),
-                              ),
-                              const SizedBox(
-                                  width: AppConstants.smallVerticalSpacing),
-                              ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth: media.size.width / 3,
-                                ),
-                                child: Slider.adaptive(
-                                  value: max(_newColor.opacity, 0.3),
-                                  min: 0.3,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _newColor = _newColor.withOpacity(value);
-                                    });
-                                  },
-                                ),
-                              ),
-                              CheckersBackground(
-                                child: Container(
-                                  height: _circleSize,
-                                  width: _circleSize,
-                                  decoration: BoxDecoration(
-                                    color: _newColor,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                            ],
+          child: Material(
+            color: Colors.transparent,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: AppConstants.smallVerticalSpacing,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Opacity',
+                            style: GameTextStyles.boldTextStyle(
+                                media: media, isLandscape: true),
                           ),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                //horizontal: AppConstants.smallHorizontalSpacing,
+                          const SizedBox(
+                              width: AppConstants.smallVerticalSpacing),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: media.size.width / 3,
+                            ),
+                            child: Slider.adaptive(
+                              value: max(_newColor.opacity, 0.3),
+                              min: 0.3,
+                              onChanged: (value) {
+                                setState(() {
+                                  _newColor = _newColor.withOpacity(value);
+                                });
+                              },
+                            ),
+                          ),
+                          CheckersBackground(
+                            child: Container(
+                              height: _circleSize,
+                              width: _circleSize,
+                              decoration: BoxDecoration(
+                                color: _newColor,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  width: 3.0,
+                                  color: Colors.black.withOpacity(0.7),
                                 ),
-                            child: SingleChildScrollView(
-                              child: Row(
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            for (final colorList in brushColorListTEMP)
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  for (final colorList in brushColorListTEMP)
-                                    Column(
-                                      children: [
-                                        for (final color in colorList)
-                                          Padding(
-                                            padding: const EdgeInsets.all(2),
-                                            child: _ColorButton(
-                                                color: color,
-                                                onPressed: () {
-                                                  setState(() {
-                                                    _newColor = color;
-                                                  });
-                                                }),
-                                          ),
-                                      ],
+                                  for (final color in colorList)
+                                    Padding(
+                                      padding: const EdgeInsets.all(3),
+                                      child: _ColorButton(
+                                          color: color,
+                                          onPressed: () {
+                                            setState(() {
+                                              _newColor = color;
+                                            });
+                                          }),
                                     ),
                                 ],
                               ),
-
-                              // Wrap(
-                              //   spacing: 12.0,
-                              //   runSpacing: 12.0,
-                              //   children: [
-                              //     // brushColorList
-                              //     for (final color in brushColors)
-                              //       _ColorButton(
-                              //         color: color,
-                              //         onPressed: () {
-                              //           setState(() {
-                              //             _newColor = color;
-                              //           });
-                              //         },
-                              //       ),
-                              //   ],
-                              // ),
-                            ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: ClosePanelButton(
-                      onTapped: () {
-                        widget.onColorChanged(_newColor);
-                        Navigator.of(context).maybePop();
-                      },
-                    ),
+                ),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: ClosePanelButton(
+                    onTapped: () {
+                      widget.onColorChanged(_newColor);
+                      Navigator.of(context).maybePop();
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

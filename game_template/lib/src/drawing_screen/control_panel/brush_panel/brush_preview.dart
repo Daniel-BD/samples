@@ -81,9 +81,9 @@ class _BrushPreviewState extends State<BrushPreview> {
       decoration: BoxDecoration(
         border: Border.all(
           color: Color(0xFFD0D0D0),
-          width: 0.5,
+          width: 1,
         ),
-        color: Color(0xFFEEEEEE),
+        color: Color(0xFFF2F2F2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: IntrinsicHeight(

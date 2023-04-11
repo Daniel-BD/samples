@@ -486,7 +486,7 @@ class SettingsContainer extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(
-          color: panelDarkColor.withOpacity(0.1),
+          color: Color(0xFFD0D0D0), //Colors.black.withOpacity(0.1),
           width: 1.0,
         ),
         borderRadius: BorderRadius.circular(6.0),

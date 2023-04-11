@@ -1605,14 +1605,14 @@ class TriangleBrushLine extends BrushLine {
     ..strokeWidth = settings.strokeWidth
     ..strokeJoin = StrokeJoin.bevel
     ..style = PaintingStyle.fill
-    ..color = settings.color
+    ..color = settings.secondColor ?? settings.color
     ..strokeCap = StrokeCap.round;
 
   late final strokePaint = Paint()
     ..strokeWidth = settings.strokeWidth
     ..strokeJoin = StrokeJoin.bevel
     ..style = PaintingStyle.stroke
-    ..color = settings.secondColor ?? settings.color
+    ..color = settings.color
     ..strokeCap = StrokeCap.round;
 
   @override

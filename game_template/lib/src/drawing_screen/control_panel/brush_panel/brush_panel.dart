@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../theme/colors.dart';
 import '../../../theme/text_styles.dart';
+import '../../../ui_components/ui_constants.dart';
 import '../close_panel_button.dart';
 import '../control_panel_controller.dart';
 import '../pop_up_panel_decoration.dart';
@@ -195,15 +196,16 @@ class BrushPanelTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: const [
         SizedBox.shrink(),
         Padding(
-          padding: EdgeInsets.symmetric(vertical: 10),
+          padding: EdgeInsets.symmetric(
+            vertical: AppConstants.smallVerticalSpacing,
+          ),
           child: SectionPicker(),
         ),
-        // for (var panelTab in BrushPanelTab.values)
-        //   BrushPanelTopBarButton(tabType: panelTab),
         ClosePanelButton(),
       ],
     );
@@ -221,9 +223,9 @@ class SectionPicker extends StatelessWidget {
       data: ThemeData(
         colorScheme: Theme.of(context).colorScheme.copyWith(
               primary: Colors.black,
-              secondaryContainer: Color(0xFFD6E5FF),
+              secondaryContainer: Color(0xFFE5F0FF), //Color(0xFFD6E5FF),
               onSurface: Color(0xFF849FC8),
-              onSecondaryContainer: Color(0xFF0F52B3),
+              onSecondaryContainer: brushButtonTextColor, //Color(0xFF0F52B3),
             ),
       ),
       child: SegmentedButton<BrushPanelTab>(
