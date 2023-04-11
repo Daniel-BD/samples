@@ -251,27 +251,27 @@ class Drawing {
     return Size(width, height);
   }
 
-  List<List<Path>> _createPathsFromDeconstructed() {
-    List<List<Path>> createdList = [];
-
-    for (var pathList in _superDeconstructedPaths) {
-      List<Path> tempList = [];
-
-      for (var fakePath in pathList) {
-        tempList.add(Path()
-          ..moveTo(fakePath.first.item1, fakePath.first.item2)
-          ..lineTo(fakePath.first.item1, fakePath.first.item2));
-
-        for (int i = 1; i < fakePath.length; i++) {
-          tempList.last.lineTo(fakePath[i].item1, fakePath[i].item2);
-        }
-      }
-
-      createdList.add(tempList);
-    }
-
-    return createdList;
-  }
+  // List<List<Path>> _createPathsFromDeconstructed() {
+  //   List<List<Path>> createdList = [];
+  //
+  //   for (var pathList in _superDeconstructedPaths) {
+  //     List<Path> tempList = [];
+  //
+  //     for (var fakePath in pathList) {
+  //       tempList.add(Path()
+  //         ..moveTo(fakePath.first.item1, fakePath.first.item2)
+  //         ..lineTo(fakePath.first.item1, fakePath.first.item2));
+  //
+  //       for (int i = 1; i < fakePath.length; i++) {
+  //         tempList.last.lineTo(fakePath[i].item1, fakePath[i].item2);
+  //       }
+  //     }
+  //
+  //     createdList.add(tempList);
+  //   }
+  //
+  //   return createdList;
+  // }
 
   // Drawing.fromJson(
   //   Map<String, dynamic> json,

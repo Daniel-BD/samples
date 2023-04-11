@@ -2,10 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:game_template/src/drawing_screen/control_panel/control_panel_controller.dart';
 import 'package:game_template/src/drawing_screen/control_panel/pop_up_panel_decoration.dart';
-import 'package:game_template/src/models/drawing.dart';
 import 'package:game_template/src/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 
+import '../../custom_painting/brushes/brushes.dart';
 import '../../theme/colors.dart';
 import '../../ui_components/ui_constants.dart';
 import '../drawing_state.dart';
@@ -156,6 +156,9 @@ class _ControlPanelState extends State<ControlPanel>
                           } else {
                             context.read<ControlPanelController>().panelState =
                                 ControlPanelState.brushSettings;
+                            context
+                                .read<ControlPanelController>()
+                                .activeBrushPanelTab = BrushPanelTab.allBrushes;
                           }
                         }
                       },
@@ -337,7 +340,6 @@ class _ControlPanelState extends State<ControlPanel>
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                    vertical: 0.0,
                     horizontal: AppConstants.smallHorizontalSpacing,
                   ),
                   child: Row(
@@ -350,7 +352,7 @@ class _ControlPanelState extends State<ControlPanel>
                       ),
                       SizedBox(
                         width: sliderWidth,
-                        child: Slider.adaptive(
+                        child: CupertinoSlider(
                           value: context
                               .read<BrushState>()
                               .currentBrush
@@ -358,8 +360,8 @@ class _ControlPanelState extends State<ControlPanel>
                           onChanged: (newValue) => context
                               .read<BrushState>()
                               .setEraserSize(newValue),
-                          min: 8.0, //TODO: Replace with const variables?
-                          max: 80.0,
+                          min: EraserBrushSettings.minWidth,
+                          max: EraserBrushSettings.maxWidth,
                         ),
                       ),
                     ],
@@ -379,7 +381,7 @@ class _ControlPanelState extends State<ControlPanel>
                       ),
                       SizedBox(
                         width: sliderWidth,
-                        child: Slider.adaptive(
+                        child: CupertinoSlider(
                           value: context
                               .read<BrushState>()
                               .currentBrush

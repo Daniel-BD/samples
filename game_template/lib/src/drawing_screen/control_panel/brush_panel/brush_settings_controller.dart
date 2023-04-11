@@ -51,7 +51,7 @@ class BrushSettingsController extends ChangeNotifier {
 
   void updateBrushSettings(
     BrushSettings newSettings, {
-    bool isFavorite = false,
+    required bool isFavorite,
     int? favoriteIndex,
   }) {
     final bool validArguments = !(isFavorite && favoriteIndex == null) &&
@@ -77,7 +77,7 @@ class BrushSettingsController extends ChangeNotifier {
       _saveDataToDisk();
     } else {
       if (favoriteIndex != null &&
-          favorites.length - 1 <= favoriteIndex &&
+          favorites.length - 1 >= favoriteIndex &&
           favoriteIndex >= 0 &&
           favorites[favoriteIndex].brushStyle == newSettings.brushStyle) {
         var updatedFavorites = favorites;

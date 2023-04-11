@@ -39,6 +39,7 @@ class ControlPanelController extends ChangeNotifier {
   ControlPanelController() {
     brushPanelPageController = PageController();
     brushPanelPageController.addListener(() {
+      if (!_notifyOnListen) return;
       final page = brushPanelPageController.page?.round();
       if (page != null && page != _activeBrushPanelTab.pageNumber) {
         _activeBrushPanelTab = TabNames.fromPageNumber(page);
@@ -65,13 +66,24 @@ class ControlPanelController extends ChangeNotifier {
 
   var _activeBrushPanelTab = BrushPanelTab.allBrushes;
   BrushPanelTab get activeBrushPanelTab => _activeBrushPanelTab;
+
+  bool _notifyOnListen = true;
   set activeBrushPanelTab(BrushPanelTab value) {
+    if (_activeBrushPanelTab == value) return;
     _activeBrushPanelTab = value;
-    brushPanelPageController.animateToPage(
-      value.pageNumber,
+    notifyListeners();
+    if (brushPanelPageController.hasClients) {
+      _animateTo(value.pageNumber);
+    }
+  }
+
+  Future<void> _animateTo(int page) async {
+    _notifyOnListen = false;
+    await brushPanelPageController.animateToPage(
+      page,
       duration: const Duration(milliseconds: 150),
       curve: Curves.easeOut,
     );
-    notifyListeners();
+    _notifyOnListen = true;
   }
 }

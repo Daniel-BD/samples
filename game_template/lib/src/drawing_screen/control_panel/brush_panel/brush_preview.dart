@@ -3,8 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:game_template/src/custom_painting/brushes/brush_extensions.dart';
 import 'package:game_template/src/drawing_screen/control_panel/brush_panel/brush_settings_controller.dart';
+import 'package:game_template/src/drawing_screen/control_panel/brush_panel/checkers_background.dart';
 import 'package:game_template/src/theme/text_styles.dart';
 import 'package:provider/provider.dart';
+import 'package:tuple/tuple.dart';
 import '../../../custom_painting/brushes/brushes.dart';
 import '../../../custom_painting/painting_widgets/brush_painter.dart';
 import '../../../theme/colors.dart';
@@ -16,13 +18,25 @@ import 'brush_settings_widgets.dart';
 class BrushPreview extends StatefulWidget {
   const BrushPreview({
     super.key,
-    required this.brushSettings,
-    this.isFavorite = false,
+    required this.brushStyle,
+    required this.isFavorite,
+    required this.onShowSettingsPressed,
     this.favoriteIndex,
-  }) : assert(!(isFavorite && favoriteIndex == null), 'Invalid arguments');
+  })  : showSettings = false,
+        assert(!(isFavorite && favoriteIndex == null), 'Invalid arguments');
 
-  final BrushSettings brushSettings;
-  final bool isFavorite;
+  const BrushPreview.settings({
+    super.key,
+    required this.brushStyle,
+    required this.isFavorite,
+    required this.onShowSettingsPressed,
+    this.favoriteIndex,
+  })  : showSettings = true,
+        assert(!(isFavorite && favoriteIndex == null), 'Invalid arguments');
+
+  final BrushStyle brushStyle;
+  final bool isFavorite, showSettings;
+  final void Function(bool) onShowSettingsPressed;
   final int? favoriteIndex;
 
   @override
@@ -30,155 +44,215 @@ class BrushPreview extends StatefulWidget {
 }
 
 class _BrushPreviewState extends State<BrushPreview> {
-  bool showSettings = false;
+  Tuple2<Size, List<Offset>>? sineWaveCache;
 
   @override
   Widget build(BuildContext context) {
-    final currentBrush = context.watch<BrushState>().currentBrush;
-    final controlPanelSettings = context.watch<ControlPanelController>();
+    final currentBrush = context.read<BrushState>().currentBrush;
+    final controlPanelSettings = context.read<ControlPanelController>();
 
-    var brushSetting = widget.brushSettings;
-    if (brushSetting is BeadsBrushSettings && brushSetting.isRainbowColored) {
-      brushSetting = brushSetting.copyWith(continueRainbow: false);
+    var brushSettings = widget.isFavorite
+        ? context.select<BrushSettingsController, BrushSettings?>(
+            (s) => s.favorites.length <= (widget.favoriteIndex!)
+                ? null
+                : s.favorites[widget.favoriteIndex!],
+          )
+        : context.select<BrushSettingsController, BrushSettings>(
+            (s) => s.allBrushes.firstWhere(
+              (e) => e.brushStyle == widget.brushStyle,
+            ),
+          );
+
+    if (brushSettings == null) {
+      return SizedBox.shrink();
     }
-    var brushLine = brushSetting
-        .withScaleFactor(currentBrush.scaleFactor)
+
+    final isCurrentBrush = currentBrush.currentBrushOrEraser == brushSettings;
+
+    if (brushSettings is BeadsBrushSettings && brushSettings.isRainbowColored) {
+      brushSettings = brushSettings.copyWith(continueRainbow: false);
+    }
+    var brushLine = brushSettings
+        .copyWith(scaleFactor: currentBrush.scaleFactor)
         .getBrushLineWithSettings();
 
     return Container(
-      margin: const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 16.0),
-      padding: EdgeInsets.only(
-          left: 8.0, right: 8.0, bottom: 8.0, top: widget.isFavorite ? 8.0 : 0),
+      padding: EdgeInsets.only(left: 8.0, right: 8.0),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.06),
+        border: Border.all(
+          color: Color(0xFFD0D0D0),
+          width: 0.5,
+        ),
+        color: Color(0xFFEEEEEE),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
-        children: [
-          if (!widget.isFavorite)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                BrushPreviewButton(
-                  buttonType: BrushPreviewButtonType.addToFavorites,
-                  onPressed: () {
-                    context
-                        .read<BrushSettingsController>()
-                        .addNewFavorite(widget.brushSettings);
-                  },
-                ),
-              ],
-            ),
-          RepaintBoundary(
-            child: CupertinoButton(
-              padding: const EdgeInsets.all(0),
-              onPressed: () {
-                context
-                    .read<BrushState>()
-                    .setCurrentBrush(widget.brushSettings);
-                controlPanelSettings.panelState = ControlPanelState.none;
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: monsterCanvasColor,
-                  border: Border.all(
-                    color: panelDarkColor.withOpacity(0.1),
-                    width: 1.0,
-                  ),
-                  borderRadius: BorderRadius.circular(6.0),
-                ),
-                child: AspectRatio(
-                  aspectRatio: 3 / 1,
-                  child: LayoutBuilder(builder: (context, constraints) {
-                    final box = Size(
-                      constraints.biggest.width * 0.6,
-                      constraints.biggest.height * 0.6,
-                    );
-                    for (var point in sineWave(box)) {
-                      brushLine.addPoint(point);
-                    }
-                    brushLine.endLine();
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                    bottom: 8.0, top: widget.isFavorite ? 8.0 : 0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (!widget.isFavorite)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          BrushPreviewButton(
+                            buttonType: BrushPreviewButtonType.addToFavorites,
+                            onPressed: () {
+                              context
+                                  .read<BrushSettingsController>()
+                                  .addNewFavorite(brushSettings!);
+                            },
+                          ),
+                        ],
+                      ),
+                    RepaintBoundary(
+                      child: CupertinoButton(
+                        padding: const EdgeInsets.all(0),
+                        onPressed: () {
+                          context
+                              .read<BrushState>()
+                              .setCurrentBrush(brushSettings!);
+                          controlPanelSettings.panelState =
+                              ControlPanelState.none;
+                        },
+                        child: Container(
+                          clipBehavior: Clip.hardEdge,
+                          decoration: BoxDecoration(
+                            color: monsterCanvasColor,
+                            border: Border.all(
+                              color: panelDarkColor,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(6.0),
+                          ),
+                          child: AspectRatio(
+                            aspectRatio: 3 / 1,
+                            child:
+                                LayoutBuilder(builder: (context, constraints) {
+                              final box = Size(
+                                constraints.biggest.width * 0.6,
+                                constraints.biggest.height * 0.6,
+                              );
+                              for (var point in sineWave(box)) {
+                                brushLine.addPoint(point);
+                              }
+                              brushLine.endLine();
 
-                    return ClipRect(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: constraints.biggest.width * 0.2,
-                          vertical: constraints.biggest.height * 0.2,
-                        ),
-                        child: CustomPaint(
-                          painter: BrushPreviewPainter(
-                            brushLines: [brushLine],
-                            scale: 1.0,
+                              return CheckersBackground(
+                                canvasColor: monsterCanvasColor,
+                                circular: false,
+                                clipRadius: Radius.circular(4.0),
+                                child: ClipRect(
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal:
+                                          constraints.biggest.width * 0.2,
+                                      vertical:
+                                          constraints.biggest.height * 0.2,
+                                    ),
+                                    child: CustomPaint(
+                                      painter: BrushPreviewPainter(
+                                        brushLines: [brushLine],
+                                        scale: 1.0,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
                           ),
                         ),
                       ),
-                    );
-                  }),
+                    ),
+                    const SizedBox(height: AppConstants.smallVerticalSpacing),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        BrushPreviewButton(
+                          buttonType: widget.showSettings
+                              ? BrushPreviewButtonType.hideSettings
+                              : BrushPreviewButtonType.showSettings,
+                          onPressed: () {
+                            widget.onShowSettingsPressed(!widget.showSettings);
+                          },
+                        ),
+                        if (widget.isFavorite && widget.favoriteIndex != null)
+                          BrushPreviewButton(
+                            buttonType:
+                                BrushPreviewButtonType.removeFromFavorite,
+                            onPressed: () {
+                              context
+                                  .read<BrushSettingsController>()
+                                  .removeFavorite(widget.favoriteIndex!);
+                            },
+                          ),
+                        if (!widget.isFavorite)
+                          BrushPreviewButton(
+                            buttonType: BrushPreviewButtonType.shuffle,
+                            onPressed: () {
+                              final randomSetting =
+                                  brushSettings!.brushStyle.randomizedBrush;
+                              context
+                                  .read<BrushSettingsController>()
+                                  .updateBrushSettings(
+                                    randomSetting,
+                                    isFavorite: widget.isFavorite,
+                                  );
+                              if (isCurrentBrush) {
+                                context
+                                    .read<BrushState>()
+                                    .setCurrentBrush(randomSetting);
+                              }
+                            },
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: AppConstants.smallVerticalSpacing),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              BrushPreviewButton(
-                buttonType: showSettings
-                    ? BrushPreviewButtonType.hideSettings
-                    : BrushPreviewButtonType.showSettings,
-                onPressed: () {
-                  setState(() {
-                    showSettings = !showSettings;
-                  });
-                },
-              ),
-              if (widget.isFavorite && widget.favoriteIndex != null)
-                BrushPreviewButton(
-                  buttonType: BrushPreviewButtonType.removeFromFavorite,
-                  onPressed: () {
-                    context
-                        .read<BrushSettingsController>()
-                        .removeFavorite(widget.favoriteIndex!);
-                  },
+            if (widget.showSettings)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      BrushSettingsPanel(
+                        oldSettings: brushSettings,
+                        onNewSettings: (newSettings) {
+                          context
+                              .read<BrushSettingsController>()
+                              .updateBrushSettings(
+                                newSettings,
+                                isFavorite: widget.isFavorite,
+                                favoriteIndex: widget.favoriteIndex,
+                              );
+                          if (isCurrentBrush) {
+                            context
+                                .read<BrushState>()
+                                .setCurrentBrush(newSettings);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              if (!widget.isFavorite)
-                BrushPreviewButton(
-                  buttonType: BrushPreviewButtonType.shuffle,
-                  onPressed: () {
-                    final randomSetting =
-                        brushSetting.brushStyle.randomizedBrush;
-                    context
-                        .read<BrushSettingsController>()
-                        .updateBrushSettings(randomSetting);
-                  },
-                ),
-            ],
-          ),
-          if (showSettings) ...[
-            const SizedBox(height: AppConstants.smallVerticalSpacing),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 2.0,
               ),
-              child: SettingsPanel(
-                oldSettings: brushSetting,
-                onNewSettings: (newSettings) {
-                  context.read<BrushSettingsController>().updateBrushSettings(
-                        newSettings,
-                        isFavorite: widget.isFavorite,
-                        favoriteIndex: widget.favoriteIndex,
-                      );
-                  context.read<BrushState>().setCurrentBrush(newSettings);
-                },
-              ),
-            ),
-          ]
-        ],
+          ],
+        ),
       ),
     );
   }
 
   List<Offset> sineWave(Size box) {
+    final cache = sineWaveCache;
+    if (cache != null && cache.item1 == box) return cache.item2;
     List<Offset> points = [];
 
     var dx = 0.1; // increase for performance vs accuracy
@@ -215,7 +289,7 @@ class _BrushPreviewState extends State<BrushPreview> {
       }
     }
 
-    return points;
+    return (sineWaveCache = Tuple2(box, points)).item2;
   }
 }
 
@@ -246,11 +320,11 @@ class BrushPreviewButton extends StatelessWidget {
     switch (buttonType) {
       case BrushPreviewButtonType.showSettings:
         buttonText = 'Show Settings';
-        buttonColor = const Color(0xFFDDE7FA);
+        // buttonColor = const Color(0xFFDDE7FA);
         break;
       case BrushPreviewButtonType.hideSettings:
         buttonText = 'Hide Settings';
-        buttonColor = const Color(0xFFDDE7FA);
+        // buttonColor = const Color(0xFFDDE7FA);
         break;
       case BrushPreviewButtonType.shuffle:
         buttonText = 'Random';

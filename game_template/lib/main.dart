@@ -14,6 +14,7 @@ import 'package:game_template/src/theme/colors.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'src/ads/ads_controller.dart';
 import 'src/app_lifecycle/app_lifecycle.dart';
@@ -243,8 +244,15 @@ class MyApp extends StatelessWidget {
     super.key,
   });
 
+  Future<void> clearLocalSettings() async {
+    return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
+
   @override
   Widget build(BuildContext context) {
+    clearLocalSettings();
     return AppLifecycleObserver(
       child: MultiProvider(
         providers: [

@@ -36,180 +36,331 @@ extension BrushExtensions on BrushStyle {
   }
 
   BrushSettings get defaultSettings {
-    const defaultWidth = 8.0;
+    double midPoint(double a, double b) {
+      assert(!a.isNegative && !b.isNegative);
+      return (a + b) / 2;
+    }
 
     switch (this) {
       case BrushStyle.singleStroke:
         return SingleStrokeBrushSettings(
-            color: brushColors.first, width: defaultWidth);
+          color: brushColors.first,
+          width: midPoint(
+            SingleStrokeBrushSettings.minWidth,
+            SingleStrokeBrushSettings.maxWidth,
+          ),
+        );
       case BrushStyle.stripedStroke:
         return StripedStrokeBrushSettings(
           firstColor: brushColors[6],
           secondColor: brushColors[17],
-          width: defaultWidth,
-          minStripeLength: defaultWidth * 2,
+          width: midPoint(
+            StripedStrokeBrushSettings.minWidth,
+            StripedStrokeBrushSettings.maxWidth,
+          ),
+          minStripeLength: midPoint(
+            StripedStrokeBrushSettings.minMinStripeLength,
+            StripedStrokeBrushSettings.maxMinStripeLength,
+          ),
           rounded: true,
         );
       case BrushStyle.doubleStroke:
         return DoubleStrokeBrushSettings(
           firstColor: brushColors[11],
           secondColor: brushColors[26],
-          width: defaultWidth,
+          width: midPoint(
+            DoubleStrokeBrushSettings.minWidth,
+            DoubleStrokeBrushSettings.maxWidth,
+          ),
         );
       case BrushStyle.wiggleFilled:
         return WiggleBrushSettings(
-          minDiameter: defaultWidth * 2,
-          strokeWidth: defaultWidth,
+          minDiameter: midPoint(
+            WiggleBrushSettings.minDiameterRange,
+            WiggleBrushSettings.maxDiameterRange,
+          ),
+          strokeWidth: midPoint(
+            WiggleBrushSettings.minStrokeWidth,
+            WiggleBrushSettings.maxStrokeWidth,
+          ),
           color: brushColors[6],
           secondColor: brushColors[7],
           filled: true,
-          maxDiameter: defaultWidth * 3,
+          maxDiameter: midPoint(
+            WiggleBrushSettings.minDiameterRange,
+            WiggleBrushSettings.maxDiameterRange,
+          ),
         );
       case BrushStyle.wiggleNotFilled:
         return WiggleBrushSettings(
-          minDiameter: defaultWidth * 2,
-          strokeWidth: defaultWidth / 2,
+          minDiameter: midPoint(
+            WiggleBrushSettings.minDiameterRange,
+            WiggleBrushSettings.maxDiameterRange,
+          ),
+          strokeWidth: midPoint(
+            WiggleBrushSettings.minStrokeWidth,
+            WiggleBrushSettings.maxStrokeWidth,
+          ),
           color: brushColors[7],
           filled: false,
-          maxDiameter: defaultWidth * 3,
+          maxDiameter: midPoint(
+            WiggleBrushSettings.minDiameterRange,
+            WiggleBrushSettings.maxDiameterRange,
+          ),
         );
       case BrushStyle.beads:
         return BeadsBrushSettings(
           isRainbowColored: true,
-          minCircleDiameter: defaultWidth * 2,
-          maxCircleDiameter: defaultWidth * 3,
+          minCircleDiameter: midPoint(
+            BeadsBrushSettings.minDiameter,
+            BeadsBrushSettings.maxDiameter,
+          ),
+          // maxCircleDiameter: midPoint(
+          //   BeadsBrushSettings.minDiameter,
+          //   BeadsBrushSettings.maxDiameter,
+          // ),
         );
       case BrushStyle.angledThick:
         return AngledThickBrushSettings(
           color: brushColors[15].withOpacity(0.7),
-          width: defaultWidth,
+          width: midPoint(
+            AngledThickBrushSettings.minWidth,
+            AngledThickBrushSettings.maxWidth,
+          ),
         );
       case BrushStyle.starryNight:
         return StarryNightBrushSettings(
           color: brushColors[12],
-          grainLength: 9,
-          grainThickness: 4,
-          strokeWidth: 2,
+          secondColor: brushColors[8],
+          grainLength: midPoint(
+            StarryNightBrushSettings.minGrainLength,
+            StarryNightBrushSettings.maxGrainLength,
+          ),
+          grainThickness: midPoint(
+            StarryNightBrushSettings.minGrainThickness,
+            StarryNightBrushSettings.maxGrainThickness,
+          ),
+          strokeWidth: midPoint(
+            StarryNightBrushSettings.minStrokeWidth,
+            StarryNightBrushSettings.maxStrokeWidth,
+          ),
         );
-        assert(false, 'not yet available!');
-        break;
       case BrushStyle.splatterDots:
         return SplatterDotsBrushSettings(
-            color: brushColors[10], dotSize: 3, strokeWidth: 12);
-        assert(false, 'not yet available!');
-        break;
+          color: brushColors[10],
+          dotSize: midPoint(
+            SplatterDotsBrushSettings.minDotSize,
+            SplatterDotsBrushSettings.maxDotSize,
+          ),
+          strokeWidth: midPoint(
+            SplatterDotsBrushSettings.minStrokeWidth,
+            SplatterDotsBrushSettings.maxStrokeWidth,
+          ),
+        );
       case BrushStyle.triangles:
         return TriangleBrushSettings(
-          minBaseWidth: defaultWidth * 2,
-          maxBaseWidth: defaultWidth * 4,
-          strokeWidth: defaultWidth / 3,
+          minBaseWidth: midPoint(
+            TriangleBrushSettings.minBaseWidthValue,
+            TriangleBrushSettings.maxBaseWidthValue,
+          ),
+          // maxBaseWidth: midPoint(
+          //   TriangleBrushSettings.minBaseWidthValue,
+          //   TriangleBrushSettings.maxBaseWidthValue,
+          // ),
+          strokeWidth: midPoint(
+            TriangleBrushSettings.minStrokeWidth,
+            TriangleBrushSettings.maxStrokeWidth,
+          ),
           color: brushColors[8],
           secondColor: brushColors[9],
         );
       case BrushStyle.rainbow:
-        return RainbowBrushSettings(width: 16);
-        assert(false, 'not yet available!');
-        break;
+        return RainbowBrushSettings(
+          width: midPoint(
+            RainbowBrushSettings.minWidth,
+            RainbowBrushSettings.maxWidth,
+          ),
+        );
       case BrushStyle.eraser:
-        return EraserBrushSettings(width: defaultWidth);
+        return EraserBrushSettings(
+          width: midPoint(
+            EraserBrushSettings.minWidth,
+            EraserBrushSettings.maxWidth,
+          ),
+        );
     }
-    assert(false, 'no matches');
-    return SingleStrokeBrushSettings(
-        color: brushColors.first, width: defaultWidth);
   }
 
   BrushSettings get randomizedBrush {
     final random = Random();
     List<Color> colors = [...brushColors];
     colors.shuffle();
-    final wideBrushWidth = (random.nextInt(30) + 4).toDouble();
-    final lessWideBrushWidth = (random.nextInt(16) + 4).toDouble();
+    double doubleInRange(num start, num end) =>
+        random.nextDouble() * (end - start) + start;
 
-    final opacity = random.nextBool()
-        ? random.nextBool()
-            ? 1.0
-            : min(random.nextDouble(), 0.6)
-        : 1.0;
+    final opacity = random.nextBool() ? doubleInRange(0.1, 0.6) : 1.0;
 
     switch (this) {
       case BrushStyle.singleStroke:
         return SingleStrokeBrushSettings(
           color: colors.first.withOpacity(opacity),
-          width: wideBrushWidth,
+          width: doubleInRange(
+            SingleStrokeBrushSettings.minWidth,
+            SingleStrokeBrushSettings.maxWidth,
+          ),
         );
       case BrushStyle.stripedStroke:
         return StripedStrokeBrushSettings(
           firstColor: colors.first,
           secondColor: colors.last,
-          width: wideBrushWidth,
-          minStripeLength: random.nextInt(20) + 4.0,
+          width: doubleInRange(
+            StripedStrokeBrushSettings.minWidth,
+            StripedStrokeBrushSettings.maxWidth,
+          ),
+          minStripeLength: doubleInRange(
+            StripedStrokeBrushSettings.minMinStripeLength,
+            StripedStrokeBrushSettings.maxMinStripeLength,
+          ),
           rounded: random.nextBool(),
         );
       case BrushStyle.doubleStroke:
         return DoubleStrokeBrushSettings(
           firstColor: colors.last,
           secondColor: colors.first.withOpacity(opacity),
-          width: lessWideBrushWidth,
+          width: doubleInRange(
+            DoubleStrokeBrushSettings.minWidth,
+            DoubleStrokeBrushSettings.maxWidth,
+          ),
         );
       case BrushStyle.wiggleFilled:
+        final minDiameter = doubleInRange(
+          WiggleBrushSettings.minDiameterRange,
+          WiggleBrushSettings.maxDiameterRange,
+        );
         return WiggleBrushSettings(
-          minDiameter: random.nextInt(20) + 8.0,
-          maxDiameter: random.nextInt(50) + 20.0,
-          strokeWidth: random.nextInt(12) + 2.0,
+          minDiameter: minDiameter,
+          maxDiameter: doubleInRange(
+            minDiameter,
+            WiggleBrushSettings.maxDiameterRange,
+          ),
+          strokeWidth: doubleInRange(
+            WiggleBrushSettings.minStrokeWidth,
+            WiggleBrushSettings.maxStrokeWidth,
+          ),
           color: colors.first,
           secondColor: colors.last,
           filled: true,
         );
       case BrushStyle.wiggleNotFilled:
+        final minDiameter = doubleInRange(
+          WiggleBrushSettings.minDiameterRange,
+          WiggleBrushSettings.maxDiameterRange,
+        );
         return WiggleBrushSettings(
-          minDiameter: random.nextInt(40) + 8.0,
-          strokeWidth: random.nextInt(12) + 2.0,
+          minDiameter: minDiameter,
+          maxDiameter: doubleInRange(
+            minDiameter,
+            WiggleBrushSettings.maxDiameterRange,
+          ),
+          strokeWidth: doubleInRange(
+            WiggleBrushSettings.minStrokeWidth,
+            WiggleBrushSettings.maxStrokeWidth,
+          ),
           color: colors.first,
           secondColor: colors.last,
           filled: false,
-          maxDiameter: random.nextInt(50) + 20.0,
         );
       case BrushStyle.beads:
         final isRainbowColored = random.nextBool();
+        final minDiameter = doubleInRange(
+          BeadsBrushSettings.minDiameter,
+          BeadsBrushSettings.maxDiameter,
+        );
         return BeadsBrushSettings(
           color: isRainbowColored ? null : colors.first.withOpacity(opacity),
           isRainbowColored: isRainbowColored,
-          minCircleDiameter: random.nextInt(40) + 8.0,
-          maxCircleDiameter: random.nextInt(70) + 20.0,
+          minCircleDiameter: minDiameter,
+          // maxCircleDiameter: doubleInRange(
+          //   minDiameter,
+          //   BeadsBrushSettings.maxDiameter,
+          // ),
         );
       case BrushStyle.angledThick:
         return AngledThickBrushSettings(
           color: colors.first.withOpacity(opacity),
-          width: wideBrushWidth,
+          width: doubleInRange(
+            AngledThickBrushSettings.minWidth,
+            AngledThickBrushSettings.maxWidth,
+          ),
         );
       case BrushStyle.starryNight:
         return StarryNightBrushSettings(
           color: colors.first,
           secondColor: colors.last,
-          grainLength: random.nextInt(12) + 4,
-          grainThickness: random.nextInt(4) + 4,
-          strokeWidth: wideBrushWidth,
+          grainLength: doubleInRange(
+            StarryNightBrushSettings.minGrainLength,
+            StarryNightBrushSettings.maxGrainLength,
+          ),
+          grainThickness: doubleInRange(
+            StarryNightBrushSettings.minGrainThickness,
+            StarryNightBrushSettings.maxGrainThickness,
+          ),
+          strokeWidth: doubleInRange(
+            StarryNightBrushSettings.minStrokeWidth,
+            StarryNightBrushSettings.maxStrokeWidth,
+          ),
+          sprawl: doubleInRange(
+            StarryNightBrushSettings.minSprawl,
+            StarryNightBrushSettings.maxSprawl,
+          ),
         );
       case BrushStyle.splatterDots:
         return SplatterDotsBrushSettings(
-          color:
-              Colors.orange.withOpacity(0.5), //colors.first.withOpacity(0.5),
-          dotSize: 6, //random.nextInt(12) + 4.0,
-          strokeWidth: 40.0, //brushWidth * 3,
-          circular: true, //random.nextBool(),
+          color: colors.first.withOpacity(opacity),
+          dotSize: doubleInRange(
+            SplatterDotsBrushSettings.minDotSize,
+            SplatterDotsBrushSettings.maxDotSize,
+          ),
+          strokeWidth: doubleInRange(
+            SplatterDotsBrushSettings.minStrokeWidth,
+            SplatterDotsBrushSettings.maxStrokeWidth,
+          ),
+          circular: random.nextBool(),
         );
       case BrushStyle.triangles:
-        final double minBaseWidth = random.nextInt(20) + 10;
+        final minBaseWidth = doubleInRange(
+          TriangleBrushSettings.minBaseWidthValue,
+          TriangleBrushSettings.maxBaseWidthValue,
+        );
         return TriangleBrushSettings(
-            minBaseWidth: minBaseWidth,
-            strokeWidth: random.nextInt(8) + 2,
-            color: colors.first.withOpacity(opacity),
-            secondColor: colors.last,
-            maxBaseWidth: random.nextInt(30) + minBaseWidth);
+          minBaseWidth: minBaseWidth,
+          // maxBaseWidth: doubleInRange(
+          //   minBaseWidth,
+          //   TriangleBrushSettings.maxBaseWidthValue,
+          // ),
+          strokeWidth: doubleInRange(
+            TriangleBrushSettings.minStrokeWidth,
+            TriangleBrushSettings.maxStrokeWidth,
+          ),
+          heightFactor: doubleInRange(
+            TriangleBrushSettings.minHeightFactor,
+            TriangleBrushSettings.maxHeightFactor,
+          ),
+          color: colors.first.withOpacity(opacity),
+          secondColor: colors.last,
+        );
       case BrushStyle.rainbow:
-        return RainbowBrushSettings(width: 6);
+        return RainbowBrushSettings(
+            width: doubleInRange(
+          RainbowBrushSettings.minWidth,
+          RainbowBrushSettings.maxWidth,
+        ));
       case BrushStyle.eraser:
-        return EraserBrushSettings(width: 16);
+        return EraserBrushSettings(
+            width: doubleInRange(
+          EraserBrushSettings.minWidth,
+          EraserBrushSettings.maxWidth,
+        ));
     }
   }
 

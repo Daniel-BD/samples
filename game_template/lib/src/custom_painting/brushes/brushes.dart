@@ -10,10 +10,10 @@ const List<BrushStyle> availableBrushes = [
   BrushStyle.singleStroke,
   BrushStyle.stripedStroke,
   BrushStyle.doubleStroke,
-  BrushStyle.wiggleFilled,
-  BrushStyle.wiggleNotFilled,
-  BrushStyle.angledThick,
   BrushStyle.triangles,
+  BrushStyle.wiggleNotFilled,
+  BrushStyle.wiggleFilled,
+  BrushStyle.angledThick,
   BrushStyle.beads,
   BrushStyle.starryNight,
   BrushStyle.splatterDots,
@@ -40,18 +40,18 @@ enum BrushStyle {
 
 class BrushStroke {}
 
+@immutable
 abstract class BrushSettings extends Equatable {
-  const BrushSettings(this.brushStyle);
+  const BrushSettings(this.brushStyle, {this.scaleFactor});
   final BrushStyle brushStyle;
-
-  /// Returns a copy with sizes scaled according to scaleFactor
-  BrushSettings withScaleFactor(double scaleFactor);
+  final double? scaleFactor;
+  bool get isScaled => scaleFactor != null;
 
   BrushLine getBrushLineWithSettings();
 
   Map<String, dynamic> toJson();
 
-  BrushSettings copyWith();
+  BrushSettings copyWith({double scaleFactor});
 }
 
 abstract class BrushLine {
@@ -118,21 +118,25 @@ abstract class BrushLine {
 ///
 
 class SingleStrokeBrushSettings extends BrushSettings {
+  static const double minWidth = 1, maxWidth = 60;
+
   // ignore: prefer_const_constructors_in_immutables
-  SingleStrokeBrushSettings({required this.color, required this.width})
-      : super(BrushStyle.singleStroke);
+  SingleStrokeBrushSettings({
+    required this.color,
+    required double width,
+    super.scaleFactor,
+  })  : assert(width >= minWidth && width <= maxWidth,
+            'width ($width) is out of range [$minWidth..$maxWidth].'),
+        _width = width,
+        super(BrushStyle.singleStroke);
 
   late final Color color;
-  late final double width;
+  late final double _width;
+  double get width => _width * (scaleFactor ?? 1);
 
   @override
-  BrushLine getBrushLineWithSettings() {
+  SingleStrokeBrushLine getBrushLineWithSettings() {
     return SingleStrokeBrushLine(this);
-  }
-
-  @override
-  BrushSettings withScaleFactor(double scaleFactor) {
-    return SingleStrokeBrushSettings(color: color, width: width * scaleFactor);
   }
 
   @override
@@ -147,22 +151,34 @@ class SingleStrokeBrushSettings extends BrushSettings {
   SingleStrokeBrushSettings.fromJson(Map<String, dynamic> json)
       : super(BrushStyle.singleStroke) {
     color = Color(json["color"] as int);
-    width = json["width"] as double;
+    _width = json["width"] as double;
+    assert(width >= minWidth && width <= maxWidth);
   }
 
   @override
   SingleStrokeBrushSettings copyWith({
     Color? color,
     double? width,
+    double? scaleFactor,
   }) {
+    if (width != null) {
+      assert(width >= minWidth && width <= maxWidth,
+          'width ($width) is out of range [$minWidth..$maxWidth].');
+    }
     return SingleStrokeBrushSettings(
       color: color ?? this.color,
       width: width ?? this.width,
+      scaleFactor: scaleFactor ?? this.scaleFactor,
     );
   }
 
   @override
-  List<Object?> get props => [super.brushStyle, color, width];
+  List<Object?> get props => [
+        brushStyle,
+        scaleFactor,
+        color,
+        width,
+      ];
 }
 
 class SingleStrokeBrushLine extends BrushLine {
@@ -200,35 +216,41 @@ class SingleStrokeBrushLine extends BrushLine {
 ///
 
 class StripedStrokeBrushSettings extends BrushSettings {
+  static const double minWidth = 1,
+      maxWidth = 60,
+      minMinStripeLength = 2,
+      maxMinStripeLength = 40;
+
   // ignore: prefer_const_constructors_in_immutables
   StripedStrokeBrushSettings({
     required this.firstColor,
     required this.secondColor,
-    required this.width,
-    required this.minStripeLength,
+    required double width,
+    required double minStripeLength,
     required this.rounded,
-  }) : super(BrushStyle.stripedStroke);
+    super.scaleFactor,
+  })  : assert(
+          assertValueInRange(width, minValue: minWidth, maxValue: maxWidth),
+        ),
+        assert(
+          assertValueInRange(minStripeLength,
+              minValue: minMinStripeLength, maxValue: maxMinStripeLength),
+        ),
+        _width = width,
+        _minStripeLength = minStripeLength,
+        super(BrushStyle.stripedStroke);
 
   late final Color firstColor;
   late final Color secondColor;
-  late final double width;
-  late final double minStripeLength;
+  late final double _width;
+  double get width => _width * (scaleFactor ?? 1);
+  late final double _minStripeLength;
+  double get minStripeLength => _minStripeLength * (scaleFactor ?? 1);
   late final bool rounded;
 
   @override
-  BrushLine getBrushLineWithSettings() {
+  StripedStrokeBrushLine getBrushLineWithSettings() {
     return StripedStrokeBrushLine(this);
-  }
-
-  @override
-  BrushSettings withScaleFactor(double scaleFactor) {
-    return StripedStrokeBrushSettings(
-      firstColor: firstColor,
-      secondColor: secondColor,
-      width: width * scaleFactor,
-      minStripeLength: minStripeLength * scaleFactor,
-      rounded: rounded,
-    );
   }
 
   @override
@@ -247,8 +269,8 @@ class StripedStrokeBrushSettings extends BrushSettings {
       : super(BrushStyle.stripedStroke) {
     firstColor = Color(json["firstColor"] as int);
     secondColor = Color(json["secondColor"] as int);
-    width = json["width"] as double;
-    minStripeLength = json["minStripeLength"] as double;
+    _width = json["width"] as double;
+    _minStripeLength = json["minStripeLength"] as double;
     rounded = json["rounded"] as bool;
   }
 
@@ -259,6 +281,7 @@ class StripedStrokeBrushSettings extends BrushSettings {
     double? width,
     double? minStripeLength,
     bool? rounded,
+    double? scaleFactor,
   }) {
     return StripedStrokeBrushSettings(
       firstColor: firstColor ?? this.firstColor,
@@ -266,12 +289,14 @@ class StripedStrokeBrushSettings extends BrushSettings {
       width: width ?? this.width,
       minStripeLength: minStripeLength ?? this.minStripeLength,
       rounded: rounded ?? this.rounded,
+      scaleFactor: scaleFactor ?? this.scaleFactor,
     );
   }
 
   @override
   List<Object?> get props => [
-        super.brushStyle,
+        brushStyle,
+        scaleFactor,
         firstColor,
         secondColor,
         width,
@@ -331,32 +356,35 @@ class StripedStrokeBrushLine extends BrushLine {
 ///
 
 class DoubleStrokeBrushSettings extends BrushSettings {
+  static const double minWidth = 2, maxWidth = 30;
   // ignore: prefer_const_constructors_in_immutables
   DoubleStrokeBrushSettings({
     required this.firstColor,
     required this.secondColor,
-    required this.width,
-  }) : super(BrushStyle.doubleStroke);
+    required double width,
+    super.scaleFactor,
+  })  : assert(
+            assertValueInRange(width, minValue: minWidth, maxValue: maxWidth)),
+        _width = width,
+        super(BrushStyle.doubleStroke);
 
   late final Color firstColor;
   late final Color secondColor;
-  late final double width;
+  late final double _width;
+  double get width => _width * (scaleFactor ?? 1);
 
   @override
-  List<Object?> get props => [super.brushStyle, firstColor, secondColor, width];
+  List<Object?> get props => [
+        brushStyle,
+        scaleFactor,
+        firstColor,
+        secondColor,
+        width,
+      ];
 
   @override
-  BrushLine getBrushLineWithSettings() {
+  DoubleStrokeBrushLine getBrushLineWithSettings() {
     return DoubleStrokeBrushLine(this);
-  }
-
-  @override
-  BrushSettings withScaleFactor(double scaleFactor) {
-    return DoubleStrokeBrushSettings(
-      firstColor: firstColor,
-      secondColor: secondColor,
-      width: width * scaleFactor,
-    );
   }
 
   @override
@@ -373,7 +401,7 @@ class DoubleStrokeBrushSettings extends BrushSettings {
       : super(BrushStyle.doubleStroke) {
     firstColor = Color(json["firstColor"] as int);
     secondColor = Color(json["secondColor"] as int);
-    width = json["width"] as double;
+    _width = json["width"] as double;
   }
 
   @override
@@ -381,11 +409,13 @@ class DoubleStrokeBrushSettings extends BrushSettings {
     Color? firstColor,
     Color? secondColor,
     double? width,
+    double? scaleFactor,
   }) {
     return DoubleStrokeBrushSettings(
       firstColor: firstColor ?? this.firstColor,
       secondColor: secondColor ?? this.secondColor,
       width: width ?? this.width,
+      scaleFactor: scaleFactor ?? this.scaleFactor,
     );
   }
 }
@@ -444,22 +474,40 @@ class DoubleStrokeBrushLine extends BrushLine {
 ///
 //TODO: This brush adds duplicate lines, try with opacity to see what I mean. Fix this for performance. Maybe more brushes do this.
 class WiggleBrushSettings extends BrushSettings {
+  static const double minStrokeWidth = 2,
+      maxStrokeWidth = 16,
+      minDiameterRange = 4,
+      maxDiameterRange = 60;
+
   // ignore: prefer_const_constructors_in_immutables
   WiggleBrushSettings({
-    required this.strokeWidth,
+    required double strokeWidth,
     required this.color,
-    this.secondColor,
-    required this.minDiameter,
-    required this.maxDiameter,
+    required double minDiameter,
+    required double maxDiameter,
     required this.filled,
-  }) : super(filled ? BrushStyle.wiggleFilled : BrushStyle.wiggleNotFilled);
+    this.secondColor,
+    super.scaleFactor,
+  })  : assert(assertValueInRange(strokeWidth,
+            minValue: minStrokeWidth, maxValue: maxStrokeWidth)),
+        assert(assertValueInRange(minDiameter,
+            minValue: minDiameterRange, maxValue: maxDiameterRange)),
+        assert(assertValueInRange(maxDiameter,
+            minValue: minDiameterRange, maxValue: maxDiameterRange)),
+        _strokeWidth = strokeWidth * (scaleFactor ?? 1),
+        _minDiameter = minDiameter * (scaleFactor ?? 1),
+        _maxDiameter = maxDiameter * (scaleFactor ?? 1),
+        super(filled ? BrushStyle.wiggleFilled : BrushStyle.wiggleNotFilled);
 
+  late final double _maxDiameter;
+  late final double _minDiameter;
+  late final double _strokeWidth;
   late final bool filled;
-  late final double maxDiameter;
-  late final double minDiameter;
-  late final double strokeWidth;
   late final Color color;
   late final Color? secondColor;
+  double get maxDiameter => _maxDiameter;
+  double get minDiameter => _minDiameter;
+  double get strokeWidth => _strokeWidth;
 
   @override
   WiggleBrushSettings copyWith({
@@ -469,6 +517,7 @@ class WiggleBrushSettings extends BrushSettings {
     Color? secondColor,
     double? maxDiameter,
     double? minDiameter,
+    double? scaleFactor,
   }) {
     return WiggleBrushSettings(
       filled: filled ?? this.filled,
@@ -477,12 +526,14 @@ class WiggleBrushSettings extends BrushSettings {
       secondColor: secondColor ?? this.secondColor,
       maxDiameter: maxDiameter ?? this.maxDiameter,
       minDiameter: minDiameter ?? this.minDiameter,
+      scaleFactor: scaleFactor ?? super.scaleFactor,
     );
   }
 
   @override
   List<Object?> get props => [
-        super.brushStyle,
+        brushStyle,
+        scaleFactor,
         filled,
         color,
         secondColor,
@@ -492,20 +543,8 @@ class WiggleBrushSettings extends BrushSettings {
       ];
 
   @override
-  BrushLine getBrushLineWithSettings() {
+  WiggleBrushLine getBrushLineWithSettings() {
     return WiggleBrushLine(this);
-  }
-
-  @override
-  BrushSettings withScaleFactor(double scaleFactor) {
-    return WiggleBrushSettings(
-      strokeWidth: strokeWidth * scaleFactor,
-      color: color,
-      secondColor: secondColor,
-      minDiameter: minDiameter * scaleFactor,
-      maxDiameter: maxDiameter * scaleFactor,
-      filled: filled,
-    );
   }
 
   @override
@@ -527,12 +566,12 @@ class WiggleBrushSettings extends BrushSettings {
       : super(json["filled"] as bool
             ? BrushStyle.wiggleFilled
             : BrushStyle.wiggleNotFilled) {
-    strokeWidth = json["width"] as double;
+    _strokeWidth = json["width"] as double;
     color = Color(json["color"] as int);
     secondColor =
         json["secondColor"] != null ? Color(json["secondColor"] as int) : null;
-    minDiameter = json["minDiameter"] as double;
-    maxDiameter = json["maxDiameter"] as double;
+    _minDiameter = json["minDiameter"] as double;
+    _maxDiameter = json["maxDiameter"] as double;
     filled = json["filled"] as bool;
   }
 }
@@ -631,23 +670,33 @@ class WiggleBrushLine extends BrushLine {
 ///
 
 class BeadsBrushSettings extends BrushSettings {
+  static const double minDiameter = 4, maxDiameter = 50;
   // ignore: prefer_const_constructors_in_immutables
   BeadsBrushSettings({
     this.color,
     required this.isRainbowColored,
-    required this.minCircleDiameter,
-    required this.maxCircleDiameter,
+    required double minCircleDiameter,
+    // required double maxCircleDiameter,
     this.continueRainbow = true,
+    super.scaleFactor,
   })  : assert(
             isRainbowColored && color == null ||
                 !isRainbowColored && color != null,
             "If rainbowColors ìs true, then colors should be null and vice versa"),
+        assert(assertValueInRange(minCircleDiameter,
+            minValue: minDiameter, maxValue: maxDiameter)),
+        // assert(assertValueInRange(maxCircleDiameter,
+        //     minValue: minDiameter, maxValue: maxDiameter)),
+        _minCircleDiameter = minCircleDiameter,
+        _maxCircleDiameter = maxDiameter,
         super(BrushStyle.beads);
 
+  late final double _minCircleDiameter;
+  late final double _maxCircleDiameter;
+  double get minCircleDiameter => _minCircleDiameter;
+  double get maxCircleDiameter => _maxCircleDiameter;
   late final Color? color;
   late final bool isRainbowColored;
-  late final double minCircleDiameter;
-  late final double maxCircleDiameter;
   late final bool continueRainbow;
 
   @override
@@ -655,21 +704,24 @@ class BeadsBrushSettings extends BrushSettings {
     Color? color,
     bool? isRainbowColored,
     double? minCircleDiameter,
-    double? maxCircleDiameter,
+    // double? maxCircleDiameter,
     bool? continueRainbow,
+    double? scaleFactor,
   }) {
     return BeadsBrushSettings(
-      color: color ?? this.color,
+      color: isRainbowColored == true ? null : color ?? this.color,
       isRainbowColored: isRainbowColored ?? this.isRainbowColored,
       minCircleDiameter: minCircleDiameter ?? this.minCircleDiameter,
-      maxCircleDiameter: maxCircleDiameter ?? this.maxCircleDiameter,
+      // maxCircleDiameter: maxCircleDiameter ?? this.maxCircleDiameter,
       continueRainbow: continueRainbow ?? this.continueRainbow,
+      scaleFactor: scaleFactor ?? this.scaleFactor,
     );
   }
 
   @override
   List<Object?> get props => [
-        super.brushStyle,
+        brushStyle,
+        scaleFactor,
         color,
         isRainbowColored,
         minCircleDiameter,
@@ -677,19 +729,8 @@ class BeadsBrushSettings extends BrushSettings {
       ];
 
   @override
-  BrushLine getBrushLineWithSettings() {
+  BeadsBrushLine getBrushLineWithSettings() {
     return BeadsBrushLine(this);
-  }
-
-  @override
-  BrushSettings withScaleFactor(double scaleFactor) {
-    return BeadsBrushSettings(
-      color: color,
-      isRainbowColored: isRainbowColored,
-      minCircleDiameter: minCircleDiameter * scaleFactor,
-      maxCircleDiameter: maxCircleDiameter * scaleFactor,
-      continueRainbow: continueRainbow,
-    );
   }
 
   @override
@@ -707,8 +748,8 @@ class BeadsBrushSettings extends BrushSettings {
       : super(BrushStyle.beads) {
     color = json["color"] != null ? Color(json["color"] as int) : null;
     isRainbowColored = json["isRainbowColored"] as bool;
-    minCircleDiameter = json["minCircleDiameter"] as double;
-    maxCircleDiameter = json["maxCircleDiameter"] as double;
+    _minCircleDiameter = json["minCircleDiameter"] as double;
+    _maxCircleDiameter = json["maxCircleDiameter"] as double;
     continueRainbow = true;
   }
 }
@@ -841,40 +882,41 @@ class BeadsBrushLine extends BrushLine {
 ///
 
 class AngledThickBrushSettings extends BrushSettings {
+  static const double minWidth = 4, maxWidth = 50;
+
   // ignore: prefer_const_constructors_in_immutables
   AngledThickBrushSettings({
     required this.color,
-    required this.width,
-  }) : super(BrushStyle.angledThick);
+    required double width,
+    super.scaleFactor,
+  })  : assert(
+            assertValueInRange(width, minValue: minWidth, maxValue: maxWidth)),
+        _width = width,
+        super(BrushStyle.angledThick);
 
+  late final double _width;
   late final Color color;
-  late final double width;
+  double get width => _width * (scaleFactor ?? 1);
 
   @override
   AngledThickBrushSettings copyWith({
     Color? color,
     double? width,
+    double? scaleFactor,
   }) {
     return AngledThickBrushSettings(
       color: color ?? this.color,
       width: width ?? this.width,
+      scaleFactor: scaleFactor ?? this.scaleFactor,
     );
   }
 
   @override
-  List<Object?> get props => [super.brushStyle, color, width];
+  List<Object?> get props => [brushStyle, scaleFactor, color, width];
 
   @override
-  BrushLine getBrushLineWithSettings() {
+  AngledThickBrushLine getBrushLineWithSettings() {
     return AngledThickBrushLine(this);
-  }
-
-  @override
-  BrushSettings withScaleFactor(double scaleFactor) {
-    return AngledThickBrushSettings(
-      color: color,
-      width: width * scaleFactor,
-    );
   }
 
   @override
@@ -889,7 +931,7 @@ class AngledThickBrushSettings extends BrushSettings {
   AngledThickBrushSettings.fromJson(Map<String, dynamic> json)
       : super(BrushStyle.angledThick) {
     color = Color(json["color"] as int);
-    width = json["width"] as double;
+    _width = json["width"] as double;
   }
 }
 
@@ -1036,28 +1078,54 @@ class AngledThickBrushLine extends BrushLine {
 ///
 
 class StarryNightBrushSettings extends BrushSettings {
+  static const double minStrokeWidth = 6,
+      maxStrokeWidth = 30,
+      minGrainLength = 4,
+      maxGrainLength = 16,
+      minGrainThickness = 2,
+      maxGrainThickness = 10,
+      minSprawl = 0,
+      maxSprawl = 1;
+  static const int minLerps = 2, maxLerps = 6;
+
   StarryNightBrushSettings({
     required this.color,
-    required this.grainLength,
-    required this.grainThickness,
-    required this.strokeWidth,
+    required double grainLength,
+    required double grainThickness,
+    required double strokeWidth,
     this.sprawl = 0.25,
     this.lerps = 6,
     Color? secondColor,
-  })  : assert(sprawl >= 0 && sprawl <= 1,
-            'randomness must be between 0 and 1 inclusive.'),
-        assert(lerps.isEven && lerps >= 2 && lerps <= 12,
+    super.scaleFactor,
+  })  : assert(assertValueInRange(sprawl,
+            minValue: minSprawl, maxValue: maxSprawl)),
+        assert(lerps.isEven && lerps >= minLerps && lerps <= maxLerps,
             'lerps does not satisfy requirements'),
+        assert(assertValueInRange(strokeWidth,
+            minValue: minStrokeWidth, maxValue: maxStrokeWidth)),
+        assert(assertValueInRange(grainThickness,
+            minValue: minGrainThickness, maxValue: maxGrainThickness)),
+        assert(assertValueInRange(grainLength,
+            minValue: minGrainLength, maxValue: maxGrainLength)),
+        _grainLength = grainLength,
+        _strokeWidth = strokeWidth,
+        _grainThickness = grainThickness,
         super(BrushStyle.starryNight) {
     this.secondColor = secondColor ?? color;
   }
 
+  late final double _grainLength;
+  late final double _grainThickness;
+  late final double _strokeWidth;
+  late final double sprawl;
+
+  /// Must be an even number
+  late final int lerps;
   late final Color color;
   late final Color secondColor;
-  late final double grainLength;
-  late final double grainThickness;
-  late final double strokeWidth;
-  late final double sprawl;
+  double get grainLength => _grainLength * (scaleFactor ?? 1);
+  double get grainThickness => _grainThickness * (scaleFactor ?? 1);
+  double get strokeWidth => _strokeWidth * (scaleFactor ?? 1);
 
   @override
   StarryNightBrushSettings copyWith({
@@ -1067,6 +1135,8 @@ class StarryNightBrushSettings extends BrushSettings {
     double? grainThickness,
     double? strokeWidth,
     double? sprawl,
+    double? scaleFactor,
+    int? lerps,
   }) {
     return StarryNightBrushSettings(
       color: color ?? this.color,
@@ -1075,12 +1145,16 @@ class StarryNightBrushSettings extends BrushSettings {
       grainThickness: grainThickness ?? this.grainThickness,
       strokeWidth: strokeWidth ?? this.strokeWidth,
       sprawl: sprawl ?? this.sprawl,
+      scaleFactor: scaleFactor ?? super.scaleFactor,
+      lerps: lerps ?? this.lerps,
     );
   }
 
   @override
   List<Object?> get props => [
-        super.brushStyle,
+        brushStyle,
+        scaleFactor,
+        lerps,
         color,
         secondColor,
         grainLength,
@@ -1089,24 +1163,9 @@ class StarryNightBrushSettings extends BrushSettings {
         sprawl,
       ];
 
-  /// Must be an even number
-  late final int lerps;
-
   @override
-  BrushLine getBrushLineWithSettings() {
+  StarryNightBrushLine getBrushLineWithSettings() {
     return StarryNightBrushLine(this);
-  }
-
-  @override
-  BrushSettings withScaleFactor(double scaleFactor) {
-    return StarryNightBrushSettings(
-      color: color,
-      grainLength: grainLength * scaleFactor,
-      grainThickness: grainThickness * scaleFactor,
-      strokeWidth: strokeWidth * scaleFactor,
-      sprawl: sprawl,
-      lerps: lerps,
-    );
   }
 
   @override
@@ -1127,9 +1186,9 @@ class StarryNightBrushSettings extends BrushSettings {
       : super(BrushStyle.starryNight) {
     color = Color(json["color"] as int);
     secondColor = Color(json["secondColor"] as int);
-    grainLength = json["grainLength"] as double;
-    grainThickness = json["grainThickness"] as double;
-    strokeWidth = json["width"] as double;
+    _grainLength = json["grainLength"] as double;
+    _grainThickness = json["grainThickness"] as double;
+    _strokeWidth = json["width"] as double;
     sprawl = json["sprawl"] as double;
     lerps = json["lerps"] as int;
   }
@@ -1234,20 +1293,34 @@ class StarryNightBrushLine extends BrushLine {
 ///
 
 class SplatterDotsBrushSettings extends BrushSettings {
+  static const double minDotSize = 4,
+      maxDotSize = 20,
+      minStrokeWidth = 4,
+      maxStrokeWidth = 30;
+
   // ignore: prefer_const_constructors_in_immutables
   SplatterDotsBrushSettings({
     required this.color,
-    required this.dotSize,
-    required this.strokeWidth,
-    this.lerps = 2,
+    required double dotSize,
+    required double strokeWidth,
+    this.lerps = 2, //TODO, make this a setting too?
     this.circular = false,
-  }) : super(BrushStyle.splatterDots);
+    super.scaleFactor,
+  })  : assert(assertValueInRange(strokeWidth,
+            minValue: minStrokeWidth, maxValue: maxStrokeWidth)),
+        assert(assertValueInRange(dotSize,
+            minValue: minDotSize, maxValue: maxDotSize)),
+        _dotSize = dotSize,
+        _strokeWidth = strokeWidth,
+        super(BrushStyle.splatterDots);
 
+  late final double _dotSize;
+  late final double _strokeWidth;
   late final Color color;
-  late final double dotSize;
-  late final double strokeWidth;
   late final int lerps;
   late final bool circular;
+  double get dotSize => _dotSize * (scaleFactor ?? 1);
+  double get strokeWidth => _strokeWidth * (scaleFactor ?? 1);
 
   @override
   SplatterDotsBrushSettings copyWith({
@@ -1256,6 +1329,7 @@ class SplatterDotsBrushSettings extends BrushSettings {
     double? strokeWidth,
     int? lerps,
     bool? circular,
+    double? scaleFactor,
   }) {
     return SplatterDotsBrushSettings(
       color: color ?? this.color,
@@ -1263,12 +1337,14 @@ class SplatterDotsBrushSettings extends BrushSettings {
       strokeWidth: strokeWidth ?? this.strokeWidth,
       lerps: lerps ?? this.lerps,
       circular: circular ?? this.circular,
+      scaleFactor: scaleFactor ?? this.scaleFactor,
     );
   }
 
   @override
   List<Object?> get props => [
-        super.brushStyle,
+        brushStyle,
+        scaleFactor,
         color,
         dotSize,
         strokeWidth,
@@ -1277,19 +1353,8 @@ class SplatterDotsBrushSettings extends BrushSettings {
       ];
 
   @override
-  BrushLine getBrushLineWithSettings() {
+  SplatterDotsBrushLine getBrushLineWithSettings() {
     return SplatterDotsBrushLine(this);
-  }
-
-  @override
-  BrushSettings withScaleFactor(double scaleFactor) {
-    return SplatterDotsBrushSettings(
-      color: color,
-      dotSize: dotSize * scaleFactor,
-      strokeWidth: strokeWidth * scaleFactor,
-      lerps: lerps,
-      circular: circular,
-    );
   }
 
   @override
@@ -1307,8 +1372,8 @@ class SplatterDotsBrushSettings extends BrushSettings {
   SplatterDotsBrushSettings.fromJson(Map<String, dynamic> json)
       : super(BrushStyle.splatterDots) {
     color = Color(json["color"] as int);
-    dotSize = json["dotSize"] as double;
-    strokeWidth = json["strokeWidth"] as double;
+    _dotSize = json["dotSize"] as double;
+    _strokeWidth = json["strokeWidth"] as double;
     lerps = json["lerps"] as int;
     circular = json["circular"] as bool;
   }
@@ -1325,32 +1390,31 @@ class SplatterDotsBrushLine extends BrushLine {
 
   @override
   void addPoint(Offset point) {
-    if (settings.circular) {
-      final r = settings.strokeWidth / 2;
-      final rSquared = r * r;
+    // if (settings.circular) {
+    //   final r = settings.strokeWidth / 2;
+    //   final rSquared = r * r;
+    //
+    //   for (int j = 0; j < settings.lerps; j++) {
+    //     final double randomX = _random.nextBool()
+    //         ? _random.nextDouble() * r
+    //         : _random.nextDouble() * -r;
+    //     final double randomY = _random.nextBool()
+    //         ? sqrt(rSquared - randomX * randomX) * _random.nextDouble()
+    //         : -sqrt(rSquared - randomX * randomX) * _random.nextDouble();
+    //
+    //     _line.add(point.translate(randomX, randomY));
+    //   }
+    // }
+    for (int j = 0; j < settings.lerps; j++) {
+      final width = settings.strokeWidth ~/ 2;
+      final randomX = _random.nextBool()
+          ? _random.nextInt(width).toDouble()
+          : -_random.nextInt(width).toDouble();
+      final randomY = _random.nextBool()
+          ? _random.nextInt(width).toDouble()
+          : -_random.nextInt(width).toDouble();
 
-      for (int j = 0; j < settings.lerps; j++) {
-        final double randomX = _random.nextBool()
-            ? _random.nextDouble() * r
-            : _random.nextDouble() * -r;
-        final double randomY = _random.nextBool()
-            ? sqrt(rSquared - randomX * randomX) * _random.nextDouble()
-            : -sqrt(rSquared - randomX * randomX) * _random.nextDouble();
-
-        _line.add(point.translate(randomX, randomY));
-      }
-    } else {
-      for (int j = 0; j < settings.lerps; j++) {
-        final width = settings.strokeWidth ~/ 2;
-        final randomX = _random.nextBool()
-            ? _random.nextInt(width).toDouble()
-            : -_random.nextInt(width).toDouble();
-        final randomY = _random.nextBool()
-            ? _random.nextInt(width).toDouble()
-            : -_random.nextInt(width).toDouble();
-
-        _line.add(point.translate(randomX, randomY));
-      }
+      _line.add(point.translate(randomX, randomY));
     }
     updatePathAndPaint();
   }
@@ -1372,13 +1436,18 @@ class SplatterDotsBrushLine extends BrushLine {
     }
 
     for (int i = currentIndex; i < _line.length; i++) {
-      pathsAndPaints.add(Tuple2(
-          Path()
-            ..addOval(Rect.fromCircle(
-              center: _line[i],
-              radius: settings.dotSize,
-            )),
-          paint));
+      final rect = Rect.fromCircle(
+        center: _line[i],
+        radius: settings.dotSize,
+      );
+      final path =
+          settings.circular ? (Path()..addOval(rect)) : (Path()..addRect(rect));
+      pathsAndPaints.add(
+        Tuple2(
+          path,
+          paint,
+        ),
+      );
     }
   }
 }
@@ -1388,22 +1457,43 @@ class SplatterDotsBrushLine extends BrushLine {
 ///
 
 class TriangleBrushSettings extends BrushSettings {
+  static const double minStrokeWidth = 1,
+      maxStrokeWidth = 10,
+      minBaseWidthValue = 6,
+      maxBaseWidthValue = 30,
+      minHeightFactor = 0.5,
+      maxHeightFactor = 1.5;
+
   // ignore: prefer_const_constructors_in_immutables
   TriangleBrushSettings({
-    required this.strokeWidth,
+    required double strokeWidth,
     required this.color,
-    required this.minBaseWidth,
-    required this.maxBaseWidth,
+    required double minBaseWidth,
+    // required double maxBaseWidth,
     this.heightFactor = 1.0,
     this.secondColor,
-  }) : super(BrushStyle.triangles);
+    super.scaleFactor,
+  })  : assert(assertValueInRange(strokeWidth,
+            minValue: minStrokeWidth, maxValue: maxStrokeWidth)),
+        assert(assertValueInRange(minBaseWidth,
+            minValue: minBaseWidthValue, maxValue: maxBaseWidthValue)),
+        // assert(assertValueInRange(maxBaseWidth,
+        //     minValue: minBaseWidthValue, maxValue: maxBaseWidthValue)),
+        // assert(minBaseWidth <= maxBaseWidth),
+        _strokeWidth = strokeWidth,
+        _minBaseWidth = minBaseWidth,
+        // _maxBaseWidth = maxBaseWidth,
+        super(BrushStyle.triangles);
 
+  late final double _strokeWidth;
+  late final double _maxBaseWidth = maxBaseWidthValue;
+  late final double _minBaseWidth;
   late final Color color;
   late final Color? secondColor;
-  late final double strokeWidth;
-  late final double maxBaseWidth;
-  late final double minBaseWidth;
   late final double heightFactor;
+  double get strokeWidth => _strokeWidth * (scaleFactor ?? 1);
+  double get maxBaseWidth => _maxBaseWidth * (scaleFactor ?? 1);
+  double get minBaseWidth => _minBaseWidth * (scaleFactor ?? 1);
 
   @override
   TriangleBrushSettings copyWith({
@@ -1413,20 +1503,23 @@ class TriangleBrushSettings extends BrushSettings {
     double? maxBaseWidth,
     double? minBaseWidth,
     double? heightFactor,
+    double? scaleFactor,
   }) {
     return TriangleBrushSettings(
       color: color ?? this.color,
       secondColor: secondColor ?? this.secondColor,
       strokeWidth: strokeWidth ?? this.strokeWidth,
-      maxBaseWidth: maxBaseWidth ?? this.maxBaseWidth,
+      // maxBaseWidth: maxBaseWidth ?? this.maxBaseWidth,
       minBaseWidth: minBaseWidth ?? this.minBaseWidth,
       heightFactor: heightFactor ?? this.heightFactor,
+      scaleFactor: scaleFactor ?? this.scaleFactor,
     );
   }
 
   @override
   List<Object?> get props => [
-        super.brushStyle,
+        brushStyle,
+        scaleFactor,
         color,
         secondColor,
         strokeWidth,
@@ -1436,20 +1529,8 @@ class TriangleBrushSettings extends BrushSettings {
       ];
 
   @override
-  BrushLine getBrushLineWithSettings() {
+  TriangleBrushLine getBrushLineWithSettings() {
     return TriangleBrushLine(this);
-  }
-
-  @override
-  BrushSettings withScaleFactor(double scaleFactor) {
-    return TriangleBrushSettings(
-      strokeWidth: strokeWidth * scaleFactor,
-      color: color,
-      secondColor: secondColor,
-      heightFactor: heightFactor,
-      minBaseWidth: minBaseWidth * scaleFactor,
-      maxBaseWidth: maxBaseWidth * scaleFactor,
-    );
   }
 
   @override
@@ -1470,9 +1551,9 @@ class TriangleBrushSettings extends BrushSettings {
     color = Color(json["color"] as int);
     secondColor =
         json["secondColor"] != null ? Color(json["secondColor"] as int) : null;
-    strokeWidth = json["strokeWidth"] as double;
-    maxBaseWidth = json["maxBaseWidth"] as double;
-    minBaseWidth = json["minBaseWidth"] as double;
+    _strokeWidth = json["strokeWidth"] as double;
+    // _maxBaseWidth = json["maxBaseWidth"] as double;
+    _minBaseWidth = json["minBaseWidth"] as double;
     heightFactor = json["heightFactor"] as double;
   }
 }
@@ -1559,33 +1640,35 @@ class TriangleBrushLine extends BrushLine {
 ///
 
 class RainbowBrushSettings extends BrushSettings {
+  static const double minWidth = 1, maxWidth = 10;
   // ignore: prefer_const_constructors_in_immutables
   RainbowBrushSettings({
-    required this.width,
-  }) : super(BrushStyle.rainbow);
+    required double width,
+    super.scaleFactor,
+  })  : assert(
+            assertValueInRange(width, minValue: minWidth, maxValue: maxWidth)),
+        _width = width,
+        super(BrushStyle.rainbow);
 
-  late final double width;
+  late final double _width;
+  double get width => _width * (scaleFactor ?? 1);
 
   @override
   RainbowBrushSettings copyWith({
     double? width,
+    double? scaleFactor,
   }) {
     return RainbowBrushSettings(
-      width: width ?? this.width,
-    );
+        width: width ?? this.width,
+        scaleFactor: scaleFactor ?? this.scaleFactor);
   }
 
   @override
-  List<Object?> get props => [super.brushStyle, width];
+  List<Object?> get props => [brushStyle, scaleFactor, width];
 
   @override
-  BrushLine getBrushLineWithSettings() {
+  RainbowBrushLine getBrushLineWithSettings() {
     return RainbowBrushLine(this);
-  }
-
-  @override
-  BrushSettings withScaleFactor(double scaleFactor) {
-    return RainbowBrushSettings(width: width * scaleFactor);
   }
 
   @override
@@ -1598,7 +1681,7 @@ class RainbowBrushSettings extends BrushSettings {
 
   RainbowBrushSettings.fromJson(Map<String, dynamic> json)
       : super(BrushStyle.rainbow) {
-    width = json["width"] as double;
+    _width = json["width"] as double;
   }
 }
 
@@ -1727,44 +1810,44 @@ class RainbowBrushLine extends BrushLine {
 ///
 
 class EraserBrushSettings extends BrushSettings {
+  static const double minWidth = 2, maxWidth = 80;
+
   // ignore: prefer_const_constructors_in_immutables
   EraserBrushSettings({
     this.color = monsterCanvasColor,
-    required this.width,
+    required double width,
     this.opacity = 1.0,
+    super.scaleFactor,
   })  : assert(opacity <= 1.0 && opacity >= 0.0, 'Opacity is out of range'),
+        assert(
+            assertValueInRange(width, minValue: minWidth, maxValue: maxWidth)),
+        _width = width,
         super(BrushStyle.eraser);
 
+  late final double _width;
   late final Color color;
-  late final double width;
   late final double opacity;
+  double get width => _width * (scaleFactor ?? 1);
 
   @override
   EraserBrushSettings copyWith({
     double? width,
     double? opacity,
+    double? scaleFactor,
   }) {
     return EraserBrushSettings(
       width: width ?? this.width,
       opacity: opacity ?? this.opacity,
+      scaleFactor: scaleFactor ?? super.scaleFactor,
     );
   }
 
   @override
-  List<Object?> get props => [super.brushStyle, color, width, opacity];
+  List<Object?> get props => [brushStyle, scaleFactor, color, width, opacity];
 
   @override
-  BrushLine getBrushLineWithSettings() {
+  EraserBrushLine getBrushLineWithSettings() {
     return EraserBrushLine(this);
-  }
-
-  @override
-  BrushSettings withScaleFactor(double scaleFactor) {
-    return EraserBrushSettings(
-      width: width * scaleFactor,
-      color: color,
-      opacity: opacity,
-    );
   }
 
   @override
@@ -1780,7 +1863,7 @@ class EraserBrushSettings extends BrushSettings {
   EraserBrushSettings.fromJson(Map<String, dynamic> json)
       : super(BrushStyle.eraser) {
     color = Color(json["color"] as int);
-    width = json["width"] as double;
+    _width = json["width"] as double;
     opacity = json["opacity"] as double;
   }
 }
@@ -1875,4 +1958,14 @@ extension TranslateWithOffset on Offset {
   Offset translateWithOffset(Offset translation) {
     return translate(translation.dx, translation.dy);
   }
+}
+
+bool assertValueInRange(
+  double value, {
+  required double minValue,
+  required double maxValue,
+}) {
+  assert(value >= minValue && value <= maxValue,
+      'value ($value) is out of range [$minValue..$maxValue].');
+  return true;
 }

@@ -4,11 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../audio/audio_controller.dart';
-import '../audio/sounds.dart';
 import '../games_services/games_services.dart';
 import '../settings/settings.dart';
 import '../style/palette.dart';
-import '../style/responsive_screen.dart';
 import '../ui_components/buttons.dart';
 import '../ui_components/clouds_background_page.dart';
 import '../ui_components/monster_gallery_carousel.dart';

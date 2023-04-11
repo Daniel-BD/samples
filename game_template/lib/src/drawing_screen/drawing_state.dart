@@ -102,7 +102,8 @@ class CurrentBrush {
     EraserBrushSettings? eraser,
   }) {
     _currentBrushSettings = currentBrush ??
-        BrushStyle.singleStroke.defaultSettings.withScaleFactor(scaleFactor);
+        BrushStyle.singleStroke.defaultSettings
+            .copyWith(scaleFactor: scaleFactor);
 
     this.currentEraserSize = currentEraserSize ?? (scaleFactor * 16.0);
 

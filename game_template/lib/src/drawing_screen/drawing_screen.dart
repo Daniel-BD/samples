@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:game_template/src/drawing_screen/drawing_state.dart';
 import 'package:provider/provider.dart';
 
-import '../custom_painting/brushes/brushes.dart';
 import '../custom_painting/painting_widgets/brush_painter.dart';
 import '../custom_painting/painting_widgets/painter.dart';
 import '../models/drawing.dart';
